@@ -1,0 +1,2899 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>でんせつの RPG</title>
+    <style>
+/* 基本設定 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #000;
+    color: #fff;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+/* メインゲームコンテナ */
+#gameContainer {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #000;
+}
+
+/* ローディング画面 */
+#loadingScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.loading-content {
+    text-align: center;
+    color: #fff;
+}
+
+.loading-content h1 {
+    font-size: 2em;
+    margin-bottom: 1em;
+    color: #ffdd44;
+}
+
+/* ステータスバー */
+#statusBar {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background: rgba(0, 0, 100, 0.8);
+    border: 2px solid #fff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    z-index: 100;
+    font-size: 14px;
+    min-width: 200px;
+}
+
+#playerStatus {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#playerStatus span {
+    color: #fff;
+    font-weight: bold;
+}
+
+/* ゲームキャンバス */
+#gameCanvas {
+    flex: 1;
+    display: block;
+    margin: 0 auto;
+    background: #000;
+    max-width: 100vw;
+    max-height: calc(100vh - 200px);
+    object-fit: contain;
+}
+
+/* テキストウィンドウ */
+#textWindow {
+    position: fixed;
+    bottom: 120px;
+    left: 20px;
+    right: 20px;
+    height: 120px;
+    background: rgba(0, 0, 150, 0.9);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 16px;
+    color: #fff;
+    z-index: 90;
+    overflow: hidden;
+}
+
+#textContent {
+    line-height: 1.4;
+    height: 100%;
+    overflow-y: auto;
+}
+
+/* コマンドウィンドウ */
+#commandWindow {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: rgba(0, 0, 150, 0.9);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 90;
+    display: none;
+}
+
+#commandList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.command-btn {
+    background: rgba(100, 100, 255, 0.8);
+    border: 2px solid #fff;
+    border-radius: 4px;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    min-width: 80px;
+    transition: background 0.2s;
+}
+
+.command-btn:hover,
+.command-btn.selected {
+    background: rgba(150, 150, 255, 1);
+}
+
+.command-btn:disabled {
+    background: rgba(50, 50, 50, 0.8);
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* 各種ウィンドウ共通スタイル */
+#magicWindow,
+#equipWindow,
+#itemWindow,
+#shopWindow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 150, 0.95);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 400px;
+    max-height: 500px;
+    overflow-y: auto;
+    z-index: 200;
+}
+
+.window-item {
+    background: rgba(100, 100, 255, 0.6);
+    border: 1px solid #fff;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 4px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.window-item:hover {
+    background: rgba(150, 150, 255, 0.8);
+}
+
+/* 名前入力ウィンドウ */
+#nameInputWindow {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 150, 0.95);
+    border: 3px solid #fff;
+    border-radius: 8px;
+    padding: 30px;
+    z-index: 300;
+    text-align: center;
+}
+
+.input-container p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+#nameInput {
+    background: #fff;
+    color: #000;
+    border: 2px solid #333;
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 16px;
+    font-family: inherit;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#nameOkButton {
+    background: rgba(100, 100, 255, 0.8);
+    border: 2px solid #fff;
+    border-radius: 4px;
+    color: #fff;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* モバイル用コントローラー */
+#mobileControls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    z-index: 80;
+}
+
+/* 十字キー */
+#dpad {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+    gap: 2px;
+}
+
+.dpad-btn {
+    background: rgba(100, 100, 100, 0.7);
+    border: 2px solid #fff;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+    width: 36px;
+    height: 36px;
+}
+
+#dpad-up { grid-area: 1 / 2 / 2 / 3; }
+#dpad-left { grid-area: 2 / 1 / 3 / 2; }
+#dpad-center { 
+    grid-area: 2 / 2 / 3 / 3; 
+    background: rgba(50, 50, 50, 0.5);
+    cursor: default;
+}
+#dpad-right { grid-area: 2 / 3 / 3 / 4; }
+#dpad-down { grid-area: 3 / 2 / 4 / 3; }
+
+.dpad-btn:active:not(#dpad-center) {
+    background: rgba(150, 150, 150, 0.9);
+    transform: scale(0.95);
+}
+
+/* アクションボタン */
+#actionButtons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.action-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(100, 100, 255, 0.7);
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+}
+
+.action-btn:active {
+    background: rgba(150, 150, 255, 0.9);
+    transform: scale(0.95);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    #statusBar {
+        top: 5px;
+        right: 5px;
+        font-size: 12px;
+        min-width: 150px;
+        padding: 6px 8px;
+    }
+    
+    #textWindow {
+        bottom: 130px;
+        left: 10px;
+        right: 10px;
+        height: 100px;
+        padding: 10px;
+        font-size: 14px;
+    }
+    
+    #commandWindow {
+        left: 10px;
+        right: 10px;
+        bottom: 130px;
+    }
+    
+    .command-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+        min-width: 70px;
+    }
+    
+    #gameCanvas {
+        max-height: calc(100vh - 150px);
+    }
+    
+    #mobileControls {
+        height: 100px;
+        padding: 5px 15px;
+    }
+    
+    #dpad {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .dpad-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+    
+    .action-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    #statusBar {
+        font-size: 10px;
+        min-width: 120px;
+        padding: 4px 6px;
+    }
+    
+    #textWindow {
+        height: 80px;
+        font-size: 12px;
+    }
+    
+    .command-btn {
+        font-size: 10px;
+        padding: 4px 8px;
+        min-width: 60px;
+    }
+    
+    #dpad {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .dpad-btn {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+    }
+    
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        font-size: 12px;
+    }
+}
+
+/* デスクトップでは仮想コントローラーを非表示 */
+@media (min-width: 769px) {
+    #mobileControls {
+        display: none;
+    }
+    
+    #textWindow {
+        bottom: 20px;
+    }
+    
+    #commandWindow {
+        bottom: 20px;
+    }
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease-in-out;
+}
+
+/* バトル用エフェクト */
+.damage-text {
+    position: absolute;
+    color: #ff0000;
+    font-size: 24px;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 150;
+    animation: damageFloat 1s ease-out forwards;
+}
+
+@keyframes damageFloat {
+    0% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+}
+
+.heal-text {
+    position: absolute;
+    color: #00ff00;
+    font-size: 20px;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 150;
+    animation: damageFloat 1s ease-out forwards;
+}
+
+/* ショップ用スタイル */
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    margin: 4px 0;
+    cursor: pointer;
+    background: rgba(100, 100, 255, 0.3);
+}
+
+.shop-item:hover {
+    background: rgba(150, 150, 255, 0.6);
+}
+
+.shop-item-name {
+    font-weight: bold;
+}
+
+.shop-item-price {
+    color: #ffdd44;
+}
+
+/* スクロールバーカスタマイズ */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.7);
+}
+    </style>
+</head>
+<body>
+    <!-- メインゲーム画面 -->
+    <div id="gameContainer">
+        <!-- ステータス表示 -->
+        <div id="statusBar">
+            <div id="playerStatus">
+                <span id="playerName">フーミン</span>
+                <span id="hpDisplay">HP: 20/20</span>
+                <span id="mpDisplay">MP: 6/6</span>
+                <span id="goldDisplay">Gold: 0</span>
+                <span id="levelDisplay">Lv: 1</span>
+            </div>
+        </div>
+
+        <!-- ゲーム画面 -->
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <!-- テキストウィンドウ -->
+        <div id="textWindow">
+            <div id="textContent"></div>
+        </div>
+
+        <!-- コマンドウィンドウ -->
+        <div id="commandWindow">
+            <div id="commandList"></div>
+        </div>
+
+        <!-- 魔法選択ウィンドウ -->
+        <div id="magicWindow" style="display: none;">
+            <div id="magicList"></div>
+        </div>
+
+        <!-- 装備ウィンドウ -->
+        <div id="equipWindow" style="display: none;">
+            <div id="equipList"></div>
+        </div>
+
+        <!-- アイテムウィンドウ -->
+        <div id="itemWindow" style="display: none;">
+            <div id="itemList"></div>
+        </div>
+
+        <!-- ショップウィンドウ -->
+        <div id="shopWindow" style="display: none;">
+            <div id="shopContent"></div>
+        </div>
+
+        <!-- 名前入力ウィンドウ -->
+        <div id="nameInputWindow" style="display: none;">
+            <div class="input-container">
+                <p>ゆうしゃの なまえを いれてください</p>
+                <input type="text" id="nameInput" maxlength="8" value="フーミン">
+                <button id="nameOkButton">けってい</button>
+            </div>
+        </div>
+
+        <!-- スマホ用仮想コントローラー -->
+        <div id="mobileControls">
+            <!-- 十字キー -->
+            <div id="dpad">
+                <button class="dpad-btn" id="dpad-up" data-key="ArrowUp">↑</button>
+                <button class="dpad-btn" id="dpad-left" data-key="ArrowLeft">←</button>
+                <button class="dpad-btn" id="dpad-center"></button>
+                <button class="dpad-btn" id="dpad-right" data-key="ArrowRight">→</button>
+                <button class="dpad-btn" id="dpad-down" data-key="ArrowDown">↓</button>
+            </div>
+
+            <!-- アクションボタン -->
+            <div id="actionButtons">
+                <button class="action-btn" id="btn-a" data-key="KeyZ">A</button>
+                <button class="action-btn" id="btn-b" data-key="KeyX">B</button>
+                <button class="action-btn" id="btn-m" data-key="KeyC">M</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ローディング画面 -->
+    <div id="loadingScreen">
+        <div class="loading-content">
+            <h1>でんせつの RPG</h1>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+<script>
+// でんせつのRPG - メインゲームロジック
+
+// ゲーム状態管理
+let gameState = {
+    scene: 'loading', // loading, opening, nameInput, field, battle, town, cave, castle, ending
+    player: {
+        name: 'フーミン',
+        level: 1,
+        hp: 20,
+        maxHp: 20,
+        mp: 6,
+        maxMp: 6,
+        exp: 0,
+        nextExp: 14,
+        gold: 0,
+        atk: 5,
+        def: 3,
+        int: 4,
+        agi: 6,
+        x: 400,
+        y: 300,
+        direction: 0, // 0:下, 1:右, 2:上, 3:左
+        equipment: {
+            weapon: null,
+            shield: null,
+            armor: null,
+            helmet: null,
+            accessory: null
+        },
+        spells: ['hibana', 'hoimi'],
+        inventory: [],
+        statusEffects: []
+    },
+    world: {
+        map: 'field',
+        locations: {
+            castle: { x: 400, y: 100, visited: false },
+            town: { x: 200, y: 200, visited: false },
+            village: { x: 600, y: 400, visited: false },
+            cave1: { x: 100, y: 300, visited: false },
+            cave2: { x: 700, y: 150, visited: false },
+            cave3: { x: 300, y: 500, visited: false },
+            maouCastle: { x: 400, y: 50, visited: false, unlocked: false }
+        },
+        torchSteps: 0
+    },
+    battle: {
+        active: false,
+        enemy: null,
+        playerTurn: true,
+        enemyHp: 0,
+        enemyMaxHp: 0,
+        turnCount: 0,
+        escaped: false
+    },
+    ui: {
+        textSpeed: 25,
+        textIndex: 0,
+        currentText: '',
+        textQueue: [],
+        showingCommands: false,
+        selectedCommand: 0,
+        windowOpen: null
+    },
+    audio: {
+        context: null,
+        currentBgm: null,
+        bgmGain: null
+    },
+    flags: {
+        introShown: false,
+        maouDefeated: false,
+        gameCompleted: false
+    }
+};
+
+// ゲームデータ定義
+const SPELLS = [
+    {
+        id: 'hibana',
+        name: 'ヒバナ',
+        type: 'attack',
+        mp: 3,
+        power: { coef: 0.8, rand: [2, 5] },
+        text: {
+            cast: 'は ヒバナを となえた！',
+            hit: 'に {dmg}の ダメージ！',
+            miss: 'しかし なんの こうかも なかった……'
+        }
+    },
+    {
+        id: 'girame',
+        name: 'ギラメ',
+        type: 'attack',
+        mp: 6,
+        power: { coef: 1.2, rand: [4, 8] },
+        text: {
+            cast: 'は ギラメを となえた！',
+            hit: 'に {dmg}の ダメージ！',
+            miss: 'しかし なんの こうかも なかった……'
+        }
+    },
+    {
+        id: 'hoimi',
+        name: 'ホイミ',
+        type: 'heal',
+        mp: 4,
+        power: { coef: 1.0, rand: [8, 15] },
+        text: {
+            cast: 'は ホイミを となえた！',
+            heal: 'は {heal}かいふくした！'
+        }
+    },
+    {
+        id: 'cure',
+        name: 'キュア',
+        type: 'cure',
+        mp: 3,
+        text: {
+            cast: 'は キュアを となえた！',
+            success: 'どくやら ねむりが かいふくした！',
+            fail: 'しかし なんの こうかも なかった……'
+        }
+    },
+    {
+        id: 'scaral',
+        name: 'スカラル',
+        type: 'buff',
+        mp: 4,
+        effect: { stat: 'def', modifier: 1.2, duration: 3 },
+        text: {
+            cast: 'は スカラルを となえた！',
+            success: 'しゅびりょくが あがった！'
+        }
+    },
+    {
+        id: 'pioral',
+        name: 'ピオラル',
+        type: 'buff',
+        mp: 5,
+        effect: { stat: 'agi', modifier: 1.3, duration: 2 },
+        text: {
+            cast: 'は ピオラルを となえた！',
+            success: 'すばやさが あがった！'
+        }
+    },
+    {
+        id: 'torch',
+        name: 'トーチ',
+        type: 'utility',
+        mp: 2,
+        text: {
+            cast: 'は トーチを となえた！',
+            success: 'あたりが あかるくなった！'
+        }
+    },
+    {
+        id: 'return',
+        name: 'リターン',
+        type: 'utility',
+        mp: 8,
+        text: {
+            cast: 'は リターンを となえた！',
+            success: 'やろやに もどった！'
+        }
+    }
+];
+
+const ENEMIES = [
+    {
+        id: 'slime',
+        name: 'スライム',
+        hp: [8, 12],
+        atk: [3, 5],
+        def: [1, 2],
+        agi: [2, 4],
+        exp: [6, 10],
+        gold: [3, 6],
+        spells: [],
+        dropItems: []
+    },
+    {
+        id: 'akuma',
+        name: 'あくま',
+        hp: [20, 28],
+        atk: [6, 9],
+        def: [3, 5],
+        agi: [4, 7],
+        exp: [14, 18],
+        gold: [10, 16],
+        spells: ['hibana'],
+        dropItems: []
+    },
+    {
+        id: 'oni',
+        name: 'おに',
+        hp: [32, 40],
+        atk: [9, 12],
+        def: [6, 8],
+        agi: [6, 9],
+        exp: [22, 28],
+        gold: [20, 28],
+        spells: [],
+        dropItems: []
+    },
+    {
+        id: 'maou',
+        name: 'まおう',
+        hp: 420,
+        atk: 28,
+        def: 22,
+        agi: 18,
+        exp: 800,
+        gold: 0,
+        spells: ['girame', 'hibana'],
+        dropItems: [],
+        special: {
+            rage: false,
+            rageThreshold: 0.5
+        }
+    }
+];
+
+const EQUIPMENT = {
+    weapons: [
+        { id: 'wood_sword', name: 'もくのつるぎ', atk: 3, price: 20, special: [] },
+        { id: 'iron_sword', name: 'てつのつるぎ', atk: 8, price: 120, special: [] },
+        { id: 'steel_sword', name: 'はがねのつるぎ', atk: 13, price: 320, special: [] },
+        { id: 'rune_blade', name: 'ルーンブレード', atk: 19, price: 780, special: ['mp-1'] }
+    ],
+    shields: [
+        { id: 'wood_shield', name: 'もくのたて', def: 2, price: 25, special: [] },
+        { id: 'iron_shield', name: 'てつのたて', def: 6, price: 140, special: [] },
+        { id: 'steel_shield', name: 'はがねのたて', def: 10, price: 360, special: [] }
+    ],
+    armor: [
+        { id: 'cloth', name: 'ぬののふく', def: 2, price: 18, special: [] },
+        { id: 'leather', name: 'かわのよろい', def: 5, price: 70, special: [] },
+        { id: 'iron_armor', name: 'てつのよろい', def: 10, price: 220, special: [] },
+        { id: 'steel_armor', name: 'はがねのよろい', def: 15, price: 520, special: ['res:fire+10'] }
+    ],
+    helmets: [
+        { id: 'cloth_hat', name: 'ぬののぼうし', def: 1, price: 12, special: [] },
+        { id: 'leather_cap', name: 'かわのぼうし', def: 3, price: 45, special: [] },
+        { id: 'iron_helm', name: 'てつのかぶと', def: 6, price: 180, special: [] }
+    ],
+    accessories: [
+        { id: 'power_ring', name: 'ちからのゆびわ', atk: 2, price: 150, special: ['hit+2'] },
+        { id: 'speed_ring', name: 'すばやさのゆびわ', agi: 3, price: 200, special: ['crit+2'] },
+        { id: 'magic_ring', name: 'まほうのゆびわ', int: 4, price: 300, special: ['mp-1'] }
+    ]
+};
+
+const ITEMS = [
+    { id: 'herb', name: 'やくそう', price: 8, effect: 'heal', power: [8, 12] },
+    { id: 'antidote', name: 'どくけし', price: 12, effect: 'cure_poison' },
+    { id: 'magic_water', name: 'まほうのみず', price: 20, effect: 'restore_mp', power: [3, 8] }
+];
+
+const SHOPS = {
+    town: {
+        weapon: ['wood_sword', 'iron_sword'],
+        armor: ['cloth', 'leather', 'iron_armor'],
+        shield: ['wood_shield', 'iron_shield'],
+        helmet: ['cloth_hat', 'leather_cap'],
+        item: ['herb', 'antidote', 'magic_water'],
+        inn: 10
+    },
+    village: {
+        weapon: ['iron_sword', 'steel_sword'],
+        armor: ['leather', 'iron_armor', 'steel_armor'],
+        shield: ['iron_shield', 'steel_shield'],
+        helmet: ['leather_cap', 'iron_helm'],
+        item: ['herb', 'antidote', 'magic_water'],
+        inn: 12
+    },
+    castle: {
+        inn: 8
+    }
+};
+
+const NPCS = {
+    town: [
+        { text: 'どうくつには あかりが ひつようだぞ。' },
+        { text: 'まおうじょうは かわのむこうに あるらしい。' },
+        { text: 'つよい ぶきを みにつけて たたかうのじゃ。' }
+    ],
+    village: [
+        { text: 'きたの どうくつに つよい てきが すんでいる。' },
+        { text: 'まほうを おぼえれば たたかいが らくになるぞ。' },
+        { text: 'まおうは とても つよい。じゅんびを あすれるな。' }
+    ],
+    castle: [
+        { text: 'ゆうしゃよ、せかいの へいわを たのむぞ。' },
+        { text: 'まおうを たおせば せかいに へいわが おとずれる。' }
+    ]
+};
+
+// 音声システム 
+class AudioSystem {
+    constructor() {
+        this.context = null;
+        this.gainNode = null;
+        this.currentBgm = null;
+        this.bgmInterval = null;
+        this.initialized = false;
+    }
+
+    async init() {
+        if (this.initialized) return;
+        
+        try {
+            this.context = new (window.AudioContext || window.webkitAudioContext)();
+            this.gainNode = this.context.createGain();
+            this.gainNode.connect(this.context.destination);
+            this.gainNode.gain.value = 0.3;
+            this.initialized = true;
+        } catch (error) {
+            console.warn('Audio initialization failed:', error);
+        }
+    }
+
+    playSound(frequency, duration = 0.2, type = 'square', volume = 0.3) {
+        if (!this.context) return;
+
+        const oscillator = this.context.createOscillator();
+        const gainNode = this.context.createGain();
+
+        oscillator.type = type;
+        oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
+        
+        gainNode.gain.setValueAtTime(0, this.context.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volume, this.context.currentTime + 0.01);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + duration);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(this.context.destination);
+
+        oscillator.start(this.context.currentTime);
+        oscillator.stop(this.context.currentTime + duration);
+    }
+
+    playSE(type) {
+        switch (type) {
+            case 'select':
+                this.playSound(800, 0.1);
+                setTimeout(() => this.playSound(600, 0.1), 100);
+                break;
+            case 'cancel':
+                this.playSound(400, 0.2, 'triangle');
+                break;
+            case 'attack':
+                this.playSound(200, 0.3);
+                this.playNoise(0.1, 0.2);
+                break;
+            case 'damage':
+                this.playNoise(0.2, 0.3);
+                break;
+            case 'victory':
+                [261.63, 329.63, 392.00].forEach((freq, i) => {
+                    setTimeout(() => this.playSound(freq, 0.5), i * 100);
+                });
+                break;
+            case 'step':
+                this.playSound(300, 0.05, 'square', 0.1);
+                break;
+            case 'buy':
+                [1200, 1600, 2000].forEach((freq, i) => {
+                    setTimeout(() => this.playSound(freq, 0.1), i * 50);
+                });
+                break;
+            case 'bell':
+                this.playSound(523.25, 1.0, 'sine', 0.4);
+                break;
+        }
+    }
+
+    playNoise(duration, volume = 0.3) {
+        if (!this.context) return;
+
+        const bufferSize = this.context.sampleRate * duration;
+        const buffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * volume;
+        }
+
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+        source.connect(this.context.destination);
+        source.start();
+    }
+
+    startBGM(type) {
+        this.stopBGM();
+        
+        const patterns = {
+            field: { key: 'C', bpm: 108, pattern: [0, 2, 4, 2, 0, 2, 4, 2] },
+            town: { key: 'F', bpm: 90, pattern: [0, 1, 3, 1, 0, 1, 3, 1] },
+            cave: { key: 'Am', bpm: 72, pattern: [0, 2, 3, 2, 0, 2, 3, 2] },
+            battle: { key: 'Dm', bpm: 122, pattern: [0, 3, 0, 3, 1, 4, 1, 4] },
+            maou: { key: 'E', bpm: 66, pattern: [0, 1, 0, 1, 2, 3, 2, 3] },
+            ending: { key: 'C', bpm: 84, pattern: [0, 2, 4, 7, 4, 2, 0] }
+        };
+
+        const pattern = patterns[type];
+        if (!pattern || !this.context) return;
+
+        const scales = {
+            'C': [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25],
+            'F': [349.23, 392.00, 440.00, 466.16, 523.25, 587.33, 659.25, 698.46],
+            'Am': [220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00],
+            'Dm': [293.66, 329.63, 349.23, 392.00, 440.00, 466.16, 523.25, 587.33],
+            'E': [329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25]
+        };
+
+        const scale = scales[pattern.key];
+        const interval = 60000 / pattern.bpm / 2;
+        let noteIndex = 0;
+
+        this.bgmInterval = setInterval(() => {
+            const freq = scale[pattern.pattern[noteIndex % pattern.pattern.length]];
+            this.playSound(freq, interval / 1000 * 0.8, 'sine', 0.15);
+            noteIndex++;
+        }, interval);
+
+        this.currentBgm = type;
+    }
+
+    stopBGM() {
+        if (this.bgmInterval) {
+            clearInterval(this.bgmInterval);
+            this.bgmInterval = null;
+        }
+        this.currentBgm = null;
+    }
+}
+
+// グラフィックスシステム 
+class Graphics {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.tileSize = 32;
+        this.viewWidth = canvas.width;
+        this.viewHeight = canvas.height;
+    }
+
+    clear() {
+        this.ctx.fillStyle = '#000';
+        this.ctx.fillRect(0, 0, this.viewWidth, this.viewHeight);
+    }
+
+    drawField() {
+        const player = gameState.player;
+        const cameraX = player.x - this.viewWidth / 2;
+        const cameraY = player.y - this.viewHeight / 2;
+
+        // 地形描画
+        for (let x = 0; x < this.viewWidth + this.tileSize; x += this.tileSize) {
+            for (let y = 0; y < this.viewHeight + this.tileSize; y += this.tileSize) {
+                const worldX = x + cameraX;
+                const worldY = y + cameraY;
+                const terrain = this.getTerrainAt(worldX, worldY);
+                
+                this.ctx.fillStyle = this.getTerrainColor(terrain);
+                this.ctx.fillRect(x - (cameraX % this.tileSize), y - (cameraY % this.tileSize), this.tileSize, this.tileSize);
+            }
+        }
+
+        // 建物描画
+        Object.entries(gameState.world.locations).forEach(([name, loc]) => {
+            const screenX = loc.x - cameraX;
+            const screenY = loc.y - cameraY;
+            
+            if (screenX > -50 && screenX < this.viewWidth + 50 && 
+                screenY > -50 && screenY < this.viewHeight + 50) {
+                this.drawBuilding(screenX, screenY, name);
+            }
+        });
+
+        // プレイヤー描画
+        this.drawPlayer(this.viewWidth / 2, this.viewHeight / 2, player.direction);
+    }
+
+    getTerrainAt(x, y) {
+        // 簡単な地形生成
+        const hash = Math.sin(x * 0.01) * Math.cos(y * 0.01);
+        if (hash > 0.3) return 'forest';
+        if (hash > 0.1) return 'mountain';
+        if (hash < -0.2) return 'water';
+        return 'grass';
+    }
+
+    getTerrainColor(terrain) {
+        switch (terrain) {
+            case 'grass': return '#228B22';
+            case 'forest': return '#006400';
+            case 'mountain': return '#8B4513';
+            case 'water': return '#4169E1';
+            default: return '#228B22';
+        }
+    }
+
+    drawBuilding(x, y, type) {
+        const colors = {
+            castle: '#FFD700',
+            town: '#8B4513',
+            village: '#654321',
+            cave1: '#696969',
+            cave2: '#696969',
+            cave3: '#696969',
+            maouCastle: '#8B0000'
+        };
+
+        this.ctx.fillStyle = colors[type] || '#888';
+        this.ctx.fillRect(x - 16, y - 16, 32, 32);
+        
+        this.ctx.fillStyle = '#000';
+        this.ctx.font = '12px monospace';
+        this.ctx.textAlign = 'center';
+        
+        const names = {
+            castle: '城',
+            town: '町',
+            village: '村',
+            cave1: '洞窟',
+            cave2: '洞窟',
+            cave3: '洞窟',
+            maouCastle: '魔王城'
+        };
+        
+        this.ctx.fillText(names[type] || type, x, y + 25);
+    }
+
+    drawPlayer(x, y, direction) {
+        this.ctx.fillStyle = '#FF69B4';
+        this.ctx.fillRect(x - 8, y - 8, 16, 16);
+        
+        // 向きを示す矢印
+        this.ctx.fillStyle = '#FFF';
+        this.ctx.fillRect(x - 2, y - 2, 4, 4);
+        
+        const arrows = ['↓', '→', '↑', '←'];
+        this.ctx.fillStyle = '#000';
+        this.ctx.font = '12px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(arrows[direction], x, y + 3);
+    }
+
+    drawBattle(enemy) {
+        this.clear();
+        
+        // 敵キャラ描画
+        this.ctx.fillStyle = '#FF0000';
+        this.ctx.fillRect(this.viewWidth / 2 - 32, this.viewHeight / 2 - 64, 64, 64);
+        
+        this.ctx.fillStyle = '#FFF';
+        this.ctx.font = '20px monospace';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(enemy.name, this.viewWidth / 2, this.viewHeight / 2 - 80);
+        
+        // HPバー
+        const barWidth = 200;
+        const barHeight = 20;
+        const barX = this.viewWidth / 2 - barWidth / 2;
+        const barY = this.viewHeight / 2 + 80;
+        
+        this.ctx.strokeStyle = '#FFF';
+        this.ctx.strokeRect(barX, barY, barWidth, barHeight);
+        
+        const hpRatio = gameState.battle.enemyHp / gameState.battle.enemyMaxHp;
+        this.ctx.fillStyle = hpRatio > 0.5 ? '#00FF00' : hpRatio > 0.25 ? '#FFFF00' : '#FF0000';
+        this.ctx.fillRect(barX + 2, barY + 2, (barWidth - 4) * hpRatio, barHeight - 4);
+    }
+
+    drawCave() {
+        this.clear();
+        
+        if (gameState.world.torchSteps <= 0) {
+            // 暗闇
+            this.ctx.fillStyle = '#FFF';
+            this.ctx.font = '24px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText('まっくらで なにも みえない…', this.viewWidth / 2, this.viewHeight / 2);
+        } else {
+            // トーチで照らされた範囲
+            const radius = 100;
+            const centerX = this.viewWidth / 2;
+            const centerY = this.viewHeight / 2;
+            
+            const gradient = this.ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+            gradient.addColorStop(0, '#654321');
+            gradient.addColorStop(1, '#000');
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.fillRect(0, 0, this.viewWidth, this.viewHeight);
+            
+            this.drawPlayer(centerX, centerY, gameState.player.direction);
+        }
+    }
+
+    drawTown() {
+        this.clear();
+        
+        // 町の背景
+        this.ctx.fillStyle = '#8B4513';
+        this.ctx.fillRect(0, 0, this.viewWidth, this.viewHeight);
+        
+        // 建物
+        const buildings = [
+            { x: 100, y: 100, w: 80, h: 60, name: '宿屋' },
+            { x: 200, y: 100, w: 80, h: 60, name: '武器屋' },
+            { x: 300, y: 100, w: 80, h: 60, name: '防具屋' },
+            { x: 400, y: 100, w: 80, h: 60, name: '道具屋' }
+        ];
+        
+        buildings.forEach(building => {
+            this.ctx.fillStyle = '#654321';
+            this.ctx.fillRect(building.x, building.y, building.w, building.h);
+            
+            this.ctx.strokeStyle = '#FFF';
+            this.ctx.strokeRect(building.x, building.y, building.w, building.h);
+            
+            this.ctx.fillStyle = '#FFF';
+            this.ctx.font = '14px monospace';
+            this.ctx.textAlign = 'center';
+            this.ctx.fillText(building.name, building.x + building.w / 2, building.y + building.h / 2);
+        });
+        
+        this.drawPlayer(this.viewWidth / 2, this.viewHeight - 100, gameState.player.direction);
+    }
+
+    showDamageText(x, y, damage, isHeal = false) {
+        const textElement = document.createElement('div');
+        textElement.className = isHeal ? 'heal-text' : 'damage-text';
+        textElement.textContent = (isHeal ? '+' : '') + damage;
+        textElement.style.left = x + 'px';
+        textElement.style.top = y + 'px';
+        
+        document.body.appendChild(textElement);
+        
+        setTimeout(() => {
+            document.body.removeChild(textElement);
+        }, 1000);
+    }
+}
+
+// UI管理
+class UIManager {
+    constructor() {
+        this.textWindow = document.getElementById('textWindow');
+        this.textContent = document.getElementById('textContent');
+        this.commandWindow = document.getElementById('commandWindow');
+        this.commandList = document.getElementById('commandList');
+        this.statusElements = {
+            name: document.getElementById('playerName'),
+            hp: document.getElementById('hpDisplay'),
+            mp: document.getElementById('mpDisplay'),
+            gold: document.getElementById('goldDisplay'),
+            level: document.getElementById('levelDisplay')
+        };
+    }
+
+    updateStatus() {
+        const player = gameState.player;
+        this.statusElements.name.textContent = player.name;
+        this.statusElements.hp.textContent = `HP: ${player.hp}/${player.maxHp}`;
+        this.statusElements.mp.textContent = `MP: ${player.mp}/${player.maxMp}`;
+        this.statusElements.gold.textContent = `Gold: ${player.gold}`;
+        this.statusElements.level.textContent = `Lv: ${player.level}`;
+    }
+
+    showText(text, speed = gameState.ui.textSpeed) {
+        gameState.ui.textQueue.push({ text, speed });
+        if (gameState.ui.textQueue.length === 1) {
+            this.processNextText();
+        }
+    }
+
+    processNextText() {
+        if (gameState.ui.textQueue.length === 0) return;
+
+        const { text, speed } = gameState.ui.textQueue[0];
+        gameState.ui.currentText = text;
+        gameState.ui.textIndex = 0;
+        
+        this.typeText(speed);
+    }
+
+    typeText(speed) {
+        if (gameState.ui.textIndex < gameState.ui.currentText.length) {
+            const char = gameState.ui.currentText[gameState.ui.textIndex];
+            this.textContent.textContent += char;
+            gameState.ui.textIndex++;
+            
+            setTimeout(() => this.typeText(speed), speed);
+        } else {
+            // テキスト表示完了
+            setTimeout(() => {
+                gameState.ui.textQueue.shift();
+                if (gameState.ui.textQueue.length > 0) {
+                    this.textContent.textContent = '';
+                    this.processNextText();
+                }
+            }, 1000);
+        }
+    }
+
+    clearText() {
+        this.textContent.textContent = '';
+        gameState.ui.textQueue = [];
+        gameState.ui.textIndex = 0;
+        gameState.ui.currentText = '';
+    }
+
+    showCommands(commands) {
+        this.commandList.innerHTML = '';
+        gameState.ui.selectedCommand = 0;
+        
+        commands.forEach((cmd, index) => {
+            const button = document.createElement('button');
+            button.className = 'command-btn';
+            button.textContent = cmd.text;
+            button.disabled = cmd.disabled || false;
+            if (index === 0) button.classList.add('selected');
+            
+            button.addEventListener('click', () => {
+                audioSystem.playSE('select');
+                cmd.action();
+            });
+            
+            this.commandList.appendChild(button);
+        });
+        
+        this.commandWindow.style.display = 'block';
+        gameState.ui.showingCommands = true;
+    }
+
+    hideCommands() {
+        this.commandWindow.style.display = 'none';
+        gameState.ui.showingCommands = false;
+    }
+
+    selectCommand(direction) {
+        const buttons = this.commandList.querySelectorAll('.command-btn:not(:disabled)');
+        if (buttons.length === 0) return;
+
+        buttons[gameState.ui.selectedCommand].classList.remove('selected');
+        
+        if (direction === 'next') {
+            gameState.ui.selectedCommand = (gameState.ui.selectedCommand + 1) % buttons.length;
+        } else {
+            gameState.ui.selectedCommand = (gameState.ui.selectedCommand - 1 + buttons.length) % buttons.length;
+        }
+        
+        buttons[gameState.ui.selectedCommand].classList.add('selected');
+    }
+
+    activateCommand() {
+        const buttons = this.commandList.querySelectorAll('.command-btn:not(:disabled)');
+        if (buttons.length > 0) {
+            buttons[gameState.ui.selectedCommand].click();
+        }
+    }
+
+    showWindow(type, data) {
+        const windows = ['magicWindow', 'equipWindow', 'itemWindow', 'shopWindow'];
+        windows.forEach(w => document.getElementById(w).style.display = 'none');
+        
+        const window = document.getElementById(type);
+        if (window) {
+            window.style.display = 'block';
+            gameState.ui.windowOpen = type;
+            this.populateWindow(type, data);
+        }
+    }
+
+    hideWindow() {
+        if (gameState.ui.windowOpen) {
+            document.getElementById(gameState.ui.windowOpen).style.display = 'none';
+            gameState.ui.windowOpen = null;
+        }
+    }
+
+    populateWindow(type, data) {
+        const window = document.getElementById(type);
+        const content = window.querySelector('div');
+        content.innerHTML = '';
+
+        switch (type) {
+            case 'magicWindow':
+                this.populateMagicWindow(content);
+                break;
+            case 'shopWindow':
+                this.populateShopWindow(content, data);
+                break;
+            case 'equipWindow':
+                this.populateEquipWindow(content);
+                break;
+            case 'itemWindow':
+                this.populateItemWindow(content);
+                break;
+        }
+    }
+
+    populateMagicWindow(content) {
+        gameState.player.spells.forEach(spellId => {
+            const spell = SPELLS.find(s => s.id === spellId);
+            if (spell) {
+                const item = document.createElement('div');
+                item.className = 'window-item';
+                item.innerHTML = `${spell.name} (MP:${spell.mp})`;
+                
+                if (gameState.player.mp < spell.mp) {
+                    item.style.color = '#888';
+                    item.style.cursor = 'not-allowed';
+                } else {
+                    item.addEventListener('click', () => {
+                        audioSystem.playSE('select');
+                        this.hideWindow();
+                        gameManager.castSpell(spell);
+                    });
+                }
+                
+                content.appendChild(item);
+            }
+        });
+    }
+
+    populateShopWindow(content, shopData) {
+        const categories = Object.keys(shopData);
+        
+        categories.forEach(category => {
+            if (category === 'inn') {
+                const innItem = document.createElement('div');
+                innItem.className = 'shop-item';
+                innItem.innerHTML = `
+                    <span class="shop-item-name">やすむ</span>
+                    <span class="shop-item-price">${shopData.inn}G</span>
+                `;
+                innItem.addEventListener('click', () => {
+                    if (gameState.player.gold >= shopData.inn) {
+                        gameState.player.gold -= shopData.inn;
+                        gameState.player.hp = gameState.player.maxHp;
+                        gameState.player.mp = gameState.player.maxMp;
+                        audioSystem.playSE('buy');
+                        ui.updateStatus();
+                        ui.showText('ぐっすり やすんだ！ HPと MPが かいふくした！');
+                        ui.hideWindow();
+                    } else {
+                        audioSystem.playSE('cancel');
+                        ui.showText('おかねが たりません。');
+                    }
+                });
+                content.appendChild(innItem);
+                return;
+            }
+
+            const categoryTitle = document.createElement('h3');
+            categoryTitle.textContent = category;
+            categoryTitle.style.color = '#ffdd44';
+            categoryTitle.style.marginTop = '10px';
+            content.appendChild(categoryTitle);
+
+            shopData[category].forEach(itemId => {
+                const item = this.findItemById(itemId, category);
+                if (item) {
+                    const shopItem = document.createElement('div');
+                    shopItem.className = 'shop-item';
+                    shopItem.innerHTML = `
+                        <span class="shop-item-name">${item.name}</span>
+                        <span class="shop-item-price">${item.price}G</span>
+                    `;
+                    
+                    shopItem.addEventListener('click', () => {
+                        if (gameState.player.gold >= item.price) {
+                            gameState.player.gold -= item.price;
+                            audioSystem.playSE('buy');
+                            ui.updateStatus();
+                            
+                            if (category === 'item') {
+                                gameState.player.inventory.push(itemId);
+                                ui.showText(`${item.name}を かいました！`);
+                            } else {
+                                this.equipItem(item, category);
+                                ui.showText(`${item.name}を そうびしました！`);
+                            }
+                        } else {
+                            audioSystem.playSE('cancel');
+                            ui.showText('おかねが たりません。');
+                        }
+                    });
+                    
+                    content.appendChild(shopItem);
+                }
+            });
+        });
+    }
+
+    findItemById(itemId, category) {
+        switch (category) {
+            case 'weapon':
+                return EQUIPMENT.weapons.find(w => w.id === itemId);
+            case 'armor':
+                return EQUIPMENT.armor.find(a => a.id === itemId);
+            case 'shield':
+                return EQUIPMENT.shields.find(s => s.id === itemId);
+            case 'helmet':
+                return EQUIPMENT.helmets.find(h => h.id === itemId);
+            case 'accessory':
+                return EQUIPMENT.accessories.find(a => a.id === itemId);
+            case 'item':
+                return ITEMS.find(i => i.id === itemId);
+            default:
+                return null;
+        }
+    }
+
+    equipItem(item, category) {
+        const slotMap = {
+            weapon: 'weapon',
+            armor: 'armor',
+            shield: 'shield',
+            helmet: 'helmet',
+            accessory: 'accessory'
+        };
+        
+        const slot = slotMap[category];
+        if (slot) {
+            gameState.player.equipment[slot] = item.id;
+            gameManager.updatePlayerStats();
+        }
+    }
+
+    populateEquipWindow(content) {
+        const equipment = gameState.player.equipment;
+        const slots = ['weapon', 'shield', 'armor', 'helmet', 'accessory'];
+        
+        slots.forEach(slot => {
+            const item = document.createElement('div');
+            item.className = 'window-item';
+            
+            const equipped = equipment[slot];
+            if (equipped) {
+                const equipData = this.findItemById(equipped, slot === 'weapon' ? 'weapon' : 
+                                                   slot === 'shield' ? 'shield' :
+                                                   slot === 'armor' ? 'armor' :
+                                                   slot === 'helmet' ? 'helmet' : 'accessory');
+                item.innerHTML = `${slot}: ${equipData ? equipData.name : 'なし'}`;
+            } else {
+                item.innerHTML = `${slot}: なし`;
+            }
+            
+            content.appendChild(item);
+        });
+    }
+
+    populateItemWindow(content) {
+        if (gameState.player.inventory.length === 0) {
+            const emptyMsg = document.createElement('div');
+            emptyMsg.textContent = 'アイテムを もっていません';
+            emptyMsg.style.textAlign = 'center';
+            emptyMsg.style.color = '#888';
+            content.appendChild(emptyMsg);
+            return;
+        }
+
+        gameState.player.inventory.forEach((itemId, index) => {
+            const itemData = ITEMS.find(i => i.id === itemId);
+            if (itemData) {
+                const item = document.createElement('div');
+                item.className = 'window-item';
+                item.textContent = itemData.name;
+                
+                item.addEventListener('click', () => {
+                    audioSystem.playSE('select');
+                    this.useItem(itemData, index);
+                });
+                
+                content.appendChild(item);
+            }
+        });
+    }
+
+    useItem(item, index) {
+        const player = gameState.player;
+        
+        switch (item.effect) {
+            case 'heal':
+                const healAmount = Math.floor(Math.random() * (item.power[1] - item.power[0] + 1)) + item.power[0];
+                const actualHeal = Math.min(healAmount, player.maxHp - player.hp);
+                player.hp += actualHeal;
+                ui.showText(`${item.name}を つかった！ ${actualHeal}かいふくした！`);
+                break;
+                
+            case 'restore_mp':
+                const mpAmount = Math.floor(Math.random() * (item.power[1] - item.power[0] + 1)) + item.power[0];
+                const actualMp = Math.min(mpAmount, player.maxMp - player.mp);
+                player.mp += actualMp;
+                ui.showText(`${item.name}を つかった！ MPが ${actualMp}かいふくした！`);
+                break;
+                
+            case 'cure_poison':
+                // 毒状態解除（簡易実装）
+                ui.showText(`${item.name}を つかった！ どくが なおった！`);
+                break;
+        }
+        
+        // アイテム消費
+        player.inventory.splice(index, 1);
+        ui.updateStatus();
+        ui.hideWindow();
+    }
+}
+
+// ゲーム管理
+class GameManager {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.graphics = new Graphics(this.canvas);
+        this.encounterStep = 0;
+        this.actionQueue = [];
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+        
+        // ゲーム開始
+        setTimeout(() => {
+            document.getElementById('loadingScreen').style.display = 'none';
+            this.startGame();
+        }, 2000);
+    }
+
+    resizeCanvas() {
+        const container = document.getElementById('gameContainer');
+        const maxWidth = Math.min(800, window.innerWidth - 40);
+        const maxHeight = Math.min(600, window.innerHeight - 300);
+        
+        this.canvas.width = maxWidth;
+        this.canvas.height = maxHeight;
+        this.canvas.style.width = maxWidth + 'px';
+        this.canvas.style.height = maxHeight + 'px';
+        
+        this.graphics.viewWidth = maxWidth;
+        this.graphics.viewHeight = maxHeight;
+    }
+
+    setupEventListeners() {
+        // キーボード入力
+        document.addEventListener('keydown', (e) => this.handleInput(e.code));
+        
+        // モバイル用仮想コントローラー
+        document.querySelectorAll('.dpad-btn').forEach(btn => {
+            if (btn.dataset.key) {
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleInput(btn.dataset.key);
+                });
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.handleInput(btn.dataset.key);
+                });
+            }
+        });
+        
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.handleInput(btn.dataset.key);
+            });
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.handleInput(btn.dataset.key);
+            });
+        });
+
+        // 名前入力確定
+        document.getElementById('nameOkButton').addEventListener('click', () => {
+            const name = document.getElementById('nameInput').value.trim();
+            if (name) {
+                gameState.player.name = name;
+                document.getElementById('nameInputWindow').style.display = 'none';
+                ui.updateStatus();
+                this.startField();
+            }
+        });
+    }
+
+    handleInput(key) {
+        if (!audioSystem.initialized) {
+            audioSystem.init();
+        }
+
+        switch (gameState.scene) {
+            case 'opening':
+                this.handleOpeningInput(key);
+                break;
+            case 'nameInput':
+                this.handleNameInputInput(key);
+                break;
+            case 'field':
+                this.handleFieldInput(key);
+                break;
+            case 'battle':
+                this.handleBattleInput(key);
+                break;
+            case 'town':
+            case 'village':
+            case 'castle':
+                this.handleLocationInput(key);
+                break;
+            case 'cave':
+                this.handleCaveInput(key);
+                break;
+        }
+    }
+
+    startGame() {
+        gameState.scene = 'opening';
+        this.graphics.clear();
+        
+        const openingText = 'でんせつの はじまり……';
+        ui.showText(openingText, 100);
+        
+        setTimeout(() => {
+            this.showKingEvent();
+        }, openingText.length * 100 + 2000);
+    }
+
+    showKingEvent() {
+        ui.clearText();
+        const kingMessages = [
+            'よくぞ まいった ゆうしゃフーミンよ。',
+            'このせかいを おびやかす まおうを たおし',
+            'へいわを とりもどしてほしい。',
+            'さあ たびだちの ときじゃ。'
+        ];
+        
+        let messageIndex = 0;
+        const showNextMessage = () => {
+            if (messageIndex < kingMessages.length) {
+                ui.showText(kingMessages[messageIndex]);
+                messageIndex++;
+                setTimeout(showNextMessage, 3000);
+            } else {
+                setTimeout(() => {
+                    this.showNameInput();
+                }, 2000);
+            }
+        };
+        
+        showNextMessage();
+    }
+
+    showNameInput() {
+        gameState.scene = 'nameInput';
+        document.getElementById('nameInputWindow').style.display = 'block';
+        document.getElementById('nameInput').focus();
+    }
+
+    startField() {
+        gameState.scene = 'field';
+        gameState.flags.introShown = true;
+        audioSystem.startBGM('field');
+        this.updateDisplay();
+        
+        ui.showText('ゆうしゃの ぼうけんが はじまった！');
+    }
+
+    handleOpeningInput(key) {
+        if (key === 'KeyZ' || key === 'Space' || key === 'Enter') {
+            this.showNameInput();
+        }
+    }
+
+    handleNameInputInput(key) {
+        if (key === 'KeyZ' || key === 'Enter') {
+            document.getElementById('nameOkButton').click();
+        }
+    }
+
+    handleFieldInput(key) {
+        if (gameState.ui.windowOpen) {
+            if (key === 'KeyX') {
+                audioSystem.playSE('cancel');
+                ui.hideWindow();
+            }
+            return;
+        }
+
+        if (gameState.ui.showingCommands) {
+            this.handleCommandInput(key);
+            return;
+        }
+
+        const player = gameState.player;
+        let moved = false;
+        let newX = player.x;
+        let newY = player.y;
+        let newDirection = player.direction;
+
+        switch (key) {
+            case 'ArrowUp':
+                newY -= 32;
+                newDirection = 2;
+                moved = true;
+                break;
+            case 'ArrowDown':
+                newY += 32;
+                newDirection = 0;
+                moved = true;
+                break;
+            case 'ArrowLeft':
+                newX -= 32;
+                newDirection = 3;
+                moved = true;
+                break;
+            case 'ArrowRight':
+                newX += 32;
+                newDirection = 1;
+                moved = true;
+                break;
+            case 'KeyZ':
+                this.checkInteraction();
+                break;
+            case 'KeyC':
+                if (gameState.player.spells.length > 0) {
+                    ui.showWindow('magicWindow');
+                }
+                break;
+        }
+
+        if (moved) {
+            player.x = newX;
+            player.y = newY;
+            player.direction = newDirection;
+            audioSystem.playSE('step');
+            
+            this.checkLocation();
+            this.checkEncounter();
+            this.updateDisplay();
+        }
+    }
+
+    checkInteraction() {
+        const player = gameState.player;
+        const nearbyLocation = this.getNearbyLocation();
+        
+        if (nearbyLocation) {
+            this.enterLocation(nearbyLocation.name);
+        } else {
+            const commands = [
+                { text: 'まほう', action: () => ui.showWindow('magicWindow') },
+                { text: 'どうぐ', action: () => ui.showWindow('itemWindow') },
+                { text: 'そうび', action: () => ui.showWindow('equipWindow') },
+                { text: 'もどる', action: () => ui.hideCommands() }
+            ];
+            ui.showCommands(commands);
+        }
+    }
+
+    getNearbyLocation() {
+        const player = gameState.player;
+        const threshold = 50;
+        
+        for (const [name, loc] of Object.entries(gameState.world.locations)) {
+            const distance = Math.sqrt(Math.pow(player.x - loc.x, 2) + Math.pow(player.y - loc.y, 2));
+            if (distance < threshold) {
+                return { name, ...loc };
+            }
+        }
+        return null;
+    }
+
+    enterLocation(locationName) {
+        const location = gameState.world.locations[locationName];
+        location.visited = true;
+        
+        switch (locationName) {
+            case 'castle':
+                this.enterCastle();
+                break;
+            case 'town':
+                this.enterTown();
+                break;
+            case 'village':
+                this.enterVillage();
+                break;
+            case 'cave1':
+            case 'cave2':
+            case 'cave3':
+                this.enterCave(locationName);
+                break;
+            case 'maouCastle':
+                this.enterMaouCastle();
+                break;
+        }
+    }
+
+    enterCastle() {
+        gameState.scene = 'castle';
+        audioSystem.startBGM('town');
+        this.updateDisplay();
+        
+        const commands = [
+            { text: 'はなす', action: () => this.talkToNPC('castle') },
+            { text: 'やすむ', action: () => this.useInn(SHOPS.castle.inn) },
+            { text: 'でる', action: () => this.exitLocation() }
+        ];
+        
+        ui.showText('おしろに やってきた。');
+        ui.showCommands(commands);
+    }
+
+    enterTown() {
+        gameState.scene = 'town';
+        audioSystem.startBGM('town');
+        this.updateDisplay();
+        
+        const commands = [
+            { text: 'はなす', action: () => this.talkToNPC('town') },
+            { text: 'みせ', action: () => ui.showWindow('shopWindow', SHOPS.town) },
+            { text: 'やすむ', action: () => this.useInn(SHOPS.town.inn) },
+            { text: 'でる', action: () => this.exitLocation() }
+        ];
+        
+        ui.showText('まちに やってきた。');
+        ui.showCommands(commands);
+    }
+
+    enterVillage() {
+        gameState.scene = 'village';
+        audioSystem.startBGM('town');
+        this.updateDisplay();
+        
+        const commands = [
+            { text: 'はなす', action: () => this.talkToNPC('village') },
+            { text: 'みせ', action: () => ui.showWindow('shopWindow', SHOPS.village) },
+            { text: 'やすむ', action: () => this.useInn(SHOPS.village.inn) },
+            { text: 'でる', action: () => this.exitLocation() }
+        ];
+        
+        ui.showText('むらに やってきた。');
+        ui.showCommands(commands);
+    }
+
+    enterCave(caveName) {
+        gameState.scene = 'cave';
+        gameState.world.currentCave = caveName;
+        audioSystem.startBGM('cave');
+        this.updateDisplay();
+        
+        ui.showText('どうくつに はいった。まっくらで なにも みえない…');
+        
+        const commands = [
+            { text: 'すすむ', action: () => this.exploreCave() },
+            { text: 'まほう', action: () => ui.showWindow('magicWindow') },
+            { text: 'でる', action: () => this.exitLocation() }
+        ];
+        ui.showCommands(commands);
+    }
+
+    enterMaouCastle() {
+        if (!gameState.flags.maouDefeated) {
+            gameState.scene = 'battle';
+            audioSystem.startBGM('maou');
+            this.startBattle('maou');
+        } else {
+            ui.showText('まおうは すでに たおされている…');
+        }
+    }
+
+    talkToNPC(location) {
+        const npcs = NPCS[location];
+        if (npcs && npcs.length > 0) {
+            const randomNPC = npcs[Math.floor(Math.random() * npcs.length)];
+            ui.showText(randomNPC.text);
+        }
+    }
+
+    useInn(cost) {
+        if (gameState.player.gold >= cost) {
+            gameState.player.gold -= cost;
+            gameState.player.hp = gameState.player.maxHp;
+            gameState.player.mp = gameState.player.maxMp;
+            audioSystem.playSE('buy');
+            ui.updateStatus();
+            ui.showText('ぐっすり やすんだ！ HPと MPが かいふくした！');
+        } else {
+            audioSystem.playSE('cancel');
+            ui.showText('おかねが たりません。');
+        }
+    }
+
+    exitLocation() {
+        gameState.scene = 'field';
+        audioSystem.startBGM('field');
+        ui.hideCommands();
+        this.updateDisplay();
+    }
+
+    exploreCave() {
+        if (gameState.world.torchSteps <= 0) {
+            ui.showText('あかりが ないと すすめない！');
+            return;
+        }
+        
+        gameState.world.torchSteps -= 10;
+        
+        // ランダムイベント
+        const rand = Math.random();
+        if (rand < 0.6) {
+            // 敵出現
+            const enemies = ['akuma', 'oni'];
+            const enemyType = enemies[Math.floor(Math.random() * enemies.length)];
+            this.startBattle(enemyType);
+        } else if (rand < 0.8) {
+            // 宝箱発見
+            this.findTreasure();
+        } else {
+            ui.showText('なにも みつからなかった…');
+        }
+        
+        this.updateDisplay();
+    }
+
+    findTreasure() {
+        const treasures = [
+            { type: 'gold', amount: [50, 100] },
+            { type: 'item', id: 'herb' },
+            { type: 'item', id: 'magic_water' }
+        ];
+        
+        const treasure = treasures[Math.floor(Math.random() * treasures.length)];
+        
+        if (treasure.type === 'gold') {
+            const amount = Math.floor(Math.random() * (treasure.amount[1] - treasure.amount[0] + 1)) + treasure.amount[0];
+            gameState.player.gold += amount;
+            ui.showText(`たからばこを みつけた！ ${amount}ゴールドを てにいれた！`);
+        } else {
+            const item = ITEMS.find(i => i.id === treasure.id);
+            gameState.player.inventory.push(treasure.id);
+            ui.showText(`たからばこを みつけた！ ${item.name}を てにいれた！`);
+        }
+        
+        ui.updateStatus();
+    }
+
+    checkLocation() {
+        // 位置によるイベントチェック（必要に応じて実装）
+    }
+
+    checkEncounter() {
+        this.encounterStep++;
+        
+        const terrain = this.graphics.getTerrainAt(gameState.player.x, gameState.player.y);
+        let encounterRate = 0;
+        
+        switch (terrain) {
+            case 'grass': encounterRate = 0.05; break;
+            case 'forest': encounterRate = 0.08; break;
+            case 'mountain': encounterRate = 0.06; break;
+            case 'water': encounterRate = 0.03; break;
+        }
+        
+        if (Math.random() < encounterRate && this.encounterStep > 5) {
+            this.encounterStep = 0;
+            
+            const enemies = terrain === 'forest' ? ['akuma', 'slime'] : ['slime'];
+            const enemyType = enemies[Math.floor(Math.random() * enemies.length)];
+            
+            this.startBattle(enemyType);
+        }
+    }
+
+    startBattle(enemyType) {
+        gameState.scene = 'battle';
+        gameState.battle.active = true;
+        gameState.battle.playerTurn = true;
+        gameState.battle.turnCount = 0;
+        gameState.battle.escaped = false;
+        
+        const enemyTemplate = ENEMIES.find(e => e.id === enemyType);
+        const enemy = this.createEnemyInstance(enemyTemplate);
+        
+        gameState.battle.enemy = enemy;
+        gameState.battle.enemyHp = enemy.hp;
+        gameState.battle.enemyMaxHp = enemy.hp;
+        
+        if (enemyType !== 'maou') {
+            audioSystem.startBGM('battle');
+        }
+        
+        this.updateDisplay();
+        ui.showText(`${enemy.name}が あらわれた！`);
+        
+        setTimeout(() => {
+            this.showBattleCommands();
+        }, 2000);
+    }
+
+    createEnemyInstance(template) {
+        const enemy = { ...template };
+        
+        // ランダムステータス生成
+        if (Array.isArray(template.hp)) {
+            enemy.hp = Math.floor(Math.random() * (template.hp[1] - template.hp[0] + 1)) + template.hp[0];
+        }
+        if (Array.isArray(template.atk)) {
+            enemy.atk = Math.floor(Math.random() * (template.atk[1] - template.atk[0] + 1)) + template.atk[0];
+        }
+        if (Array.isArray(template.def)) {
+            enemy.def = Math.floor(Math.random() * (template.def[1] - template.def[0] + 1)) + template.def[0];
+        }
+        if (Array.isArray(template.agi)) {
+            enemy.agi = Math.floor(Math.random() * (template.agi[1] - template.agi[0] + 1)) + template.agi[0];
+        }
+        if (Array.isArray(template.exp)) {
+            enemy.exp = Math.floor(Math.random() * (template.exp[1] - template.exp[0] + 1)) + template.exp[0];
+        }
+        if (Array.isArray(template.gold)) {
+            enemy.gold = Math.floor(Math.random() * (template.gold[1] - template.gold[0] + 1)) + template.gold[0];
+        }
+        
+        return enemy;
+    }
+
+    showBattleCommands() {
+        if (!gameState.battle.playerTurn || !gameState.battle.active) return;
+        
+        const commands = [
+            { text: 'たたかう', action: () => this.playerAttack() },
+            { text: 'まほう', action: () => this.showBattleMagic() },
+            { text: 'にげる', action: () => this.tryEscape() }
+        ];
+        
+        ui.showCommands(commands);
+    }
+
+    showBattleMagic() {
+        ui.hideCommands();
+        const magicCommands = [];
+        
+        gameState.player.spells.forEach(spellId => {
+            const spell = SPELLS.find(s => s.id === spellId);
+            if (spell) {
+                const disabled = gameState.player.mp < spell.mp;
+                magicCommands.push({
+                    text: `${spell.name} (${spell.mp})`,
+                    disabled: disabled,
+                    action: () => {
+                        if (!disabled) {
+                            this.castSpell(spell);
+                        }
+                    }
+                });
+            }
+        });
+        
+        magicCommands.push({
+            text: 'もどる',
+            action: () => this.showBattleCommands()
+        });
+        
+        ui.showCommands(magicCommands);
+    }
+
+    playerAttack() {
+        ui.hideCommands();
+        gameState.battle.playerTurn = false;
+        
+        const player = gameState.player;
+        const enemy = gameState.battle.enemy;
+        
+        // 攻撃力計算
+        let attack = player.atk;
+        if (player.equipment.weapon) {
+            const weapon = EQUIPMENT.weapons.find(w => w.id === player.equipment.weapon);
+            if (weapon) attack += weapon.atk;
+        }
+        
+        // ダメージ計算
+        const baseDamage = attack - enemy.def * 0.62;
+        const damage = Math.max(1, Math.floor(baseDamage + Math.random() * 6 - 2));
+        
+        // 会心の一撃判定
+        const critChance = 0.01 + player.agi / 200;
+        const isCrit = Math.random() < Math.min(critChance, 0.1);
+        const finalDamage = isCrit ? Math.floor(damage * 1.5) : damage;
+        
+        audioSystem.playSE('attack');
+        
+        gameState.battle.enemyHp -= finalDamage;
+        
+        let attackText = `${player.name}の こうげき！`;
+        if (isCrit) attackText += ' かいしんの いちげき！';
+        attackText += ` ${enemy.name}に ${finalDamage}の ダメージ！`;
+        
+        ui.showText(attackText);
+        
+        setTimeout(() => {
+            if (gameState.battle.enemyHp <= 0) {
+                this.playerWins();
+            } else {
+                this.enemyTurn();
+            }
+        }, 2000);
+        
+        this.updateDisplay();
+    }
+
+    castSpell(spell) {
+        ui.hideCommands();
+        const player = gameState.player;
+        
+        if (player.mp < spell.mp) {
+            ui.showText('MPが たりない！');
+            setTimeout(() => this.showBattleCommands(), 1500);
+            return;
+        }
+        
+        player.mp -= spell.mp;
+        ui.updateStatus();
+        
+        const castText = `${player.name}${spell.text.cast}`;
+        ui.showText(castText);
+        
+        setTimeout(() => {
+            this.executeSpell(spell);
+        }, 1500);
+    }
+
+    executeSpell(spell) {
+        const player = gameState.player;
+        const enemy = gameState.battle.enemy;
+        
+        switch (spell.type) {
+            case 'attack':
+                const magicDamage = Math.floor(player.int * spell.power.coef + 
+                    Math.random() * (spell.power.rand[1] - spell.power.rand[0] + 1) + spell.power.rand[0]);
+                
+                gameState.battle.enemyHp -= magicDamage;
+                ui.showText(spell.text.hit.replace('{dmg}', magicDamage));
+                
+                setTimeout(() => {
+                    if (gameState.battle.enemyHp <= 0) {
+                        this.playerWins();
+                    } else {
+                        gameState.battle.playerTurn = false;
+                        this.enemyTurn();
+                    }
+                }, 2000);
+                break;
+                
+            case 'heal':
+                const healAmount = Math.floor(player.int * spell.power.coef + 
+                    Math.random() * (spell.power.rand[1] - spell.power.rand[0] + 1) + spell.power.rand[0]);
+                const actualHeal = Math.min(healAmount, player.maxHp - player.hp);
+                
+                player.hp += actualHeal;
+                ui.updateStatus();
+                ui.showText(spell.text.heal.replace('{heal}', actualHeal));
+                
+                setTimeout(() => {
+                    gameState.battle.playerTurn = false;
+                    this.enemyTurn();
+                }, 2000);
+                break;
+                
+            case 'buff':
+                player.statusEffects.push({
+                    type: spell.effect.stat,
+                    modifier: spell.effect.modifier,
+                    duration: spell.effect.duration
+                });
+                ui.showText(spell.text.success);
+                
+                setTimeout(() => {
+                    gameState.battle.playerTurn = false;
+                    this.enemyTurn();
+                }, 2000);
+                break;
+                
+            case 'utility':
+                if (spell.id === 'torch') {
+                    gameState.world.torchSteps += 30;
+                    ui.showText(spell.text.success);
+                } else if (spell.id === 'return') {
+                    ui.showText(spell.text.success);
+                    setTimeout(() => {
+                        this.exitLocation();
+                        gameState.battle.active = false;
+                        gameState.scene = 'field';
+                    }, 2000);
+                    return;
+                }
+                
+                if (gameState.scene === 'battle') {
+                    setTimeout(() => {
+                        gameState.battle.playerTurn = false;
+                        this.enemyTurn();
+                    }, 2000);
+                }
+                break;
+        }
+        
+        this.updateDisplay();
+    }
+
+    tryEscape() {
+        ui.hideCommands();
+        
+        const player = gameState.player;
+        const enemy = gameState.battle.enemy;
+        
+        const agiDiff = player.agi - enemy.agi;
+        const escapeChance = Math.max(0.1, Math.min(0.9, 0.35 + agiDiff * 0.05));
+        
+        if (Math.random() < escapeChance) {
+            audioSystem.playSE('select');
+            ui.showText('うまく にげることが できた！');
+            gameState.battle.escaped = true;
+            
+            setTimeout(() => {
+                this.endBattle();
+            }, 2000);
+        } else {
+            audioSystem.playSE('cancel');
+            ui.showText('にげることが できなかった！');
+            
+            setTimeout(() => {
+                gameState.battle.playerTurn = false;
+                this.enemyTurn();
+            }, 2000);
+        }
+    }
+
+    enemyTurn() {
+        if (!gameState.battle.active || gameState.battle.playerTurn) return;
+        
+        const enemy = gameState.battle.enemy;
+        const player = gameState.player;
+        
+        // 魔王の特殊行動
+        if (enemy.id === 'maou' && !enemy.special.rage && 
+            gameState.battle.enemyHp <= gameState.battle.enemyMaxHp * enemy.special.rageThreshold) {
+            enemy.special.rage = true;
+            enemy.atk = Math.floor(enemy.atk * 1.5);
+            ui.showText(`${enemy.name}は いかりにより パワーアップした！`);
+            
+            setTimeout(() => {
+                this.continueEnemyTurn();
+            }, 2000);
+            return;
+        }
+        
+        this.continueEnemyTurn();
+    }
+
+    continueEnemyTurn() {
+        const enemy = gameState.battle.enemy;
+        const player = gameState.player;
+        
+        // 敵の行動選択
+        let action = 'attack';
+        if (enemy.spells && enemy.spells.length > 0 && Math.random() < 0.3) {
+            action = 'magic';
+        }
+        
+        if (action === 'attack') {
+            const damage = Math.max(1, Math.floor(enemy.atk - player.def * 0.62 + Math.random() * 6 - 2));
+            player.hp -= damage;
+            
+            audioSystem.playSE('damage');
+            ui.showText(`${enemy.name}の こうげき！ ${player.name}は ${damage}の ダメージを うけた！`);
+        } else {
+            // 敵魔法使用
+            const spellId = enemy.spells[Math.floor(Math.random() * enemy.spells.length)];
+            const spell = SPELLS.find(s => s.id === spellId);
+            
+            if (spell && spell.type === 'attack') {
+                const magicDamage = Math.floor(enemy.atk * 0.8 + Math.random() * 8 + 2);
+                player.hp -= magicDamage;
+                ui.showText(`${enemy.name}は ${spell.name}を となえた！ ${player.name}は ${magicDamage}の ダメージを うけた！`);
+            }
+        }
+        
+        ui.updateStatus();
+        
+        setTimeout(() => {
+            if (player.hp <= 0) {
+                this.playerLoses();
+            } else {
+                gameState.battle.playerTurn = true;
+                gameState.battle.turnCount++;
+                this.updateStatusEffects();
+                this.showBattleCommands();
+            }
+        }, 2000);
+        
+        this.updateDisplay();
+    }
+
+    updateStatusEffects() {
+        // ステータス効果の更新
+        gameState.player.statusEffects = gameState.player.statusEffects.filter(effect => {
+            effect.duration--;
+            return effect.duration > 0;
+        });
+    }
+
+    playerWins() {
+        const enemy = gameState.battle.enemy;
+        audioSystem.playSE('victory');
+        
+        ui.showText(`${enemy.name}を たおした！`);
+        
+        setTimeout(() => {
+            // 経験値・ゴールド獲得
+            gameState.player.exp += enemy.exp;
+            gameState.player.gold += enemy.gold;
+            
+            ui.showText(`けいけんち ${enemy.exp}を てにいれた！`);
+            
+            setTimeout(() => {
+                if (enemy.gold > 0) {
+                    ui.showText(`${enemy.gold}ゴールドを てにいれた！`);
+                }
+                
+                setTimeout(() => {
+                    this.checkLevelUp();
+                    
+                    if (enemy.id === 'maou') {
+                        gameState.flags.maouDefeated = true;
+                        setTimeout(() => {
+                            this.startEnding();
+                        }, 3000);
+                    } else {
+                        this.endBattle();
+                    }
+                }, 2000);
+            }, 2000);
+        }, 2000);
+        
+        ui.updateStatus();
+    }
+
+    checkLevelUp() {
+        const player = gameState.player;
+        
+        while (player.exp >= player.nextExp) {
+            player.level++;
+            player.exp -= player.nextExp;
+            player.nextExp = Math.floor(12 + Math.pow(player.level, 2) * 1.8);
+            
+            // ステータス上昇
+            const hpIncrease = Math.floor(Math.random() * 8) + 5;
+            const mpIncrease = Math.floor(Math.random() * 4) + 2;
+            
+            player.maxHp += hpIncrease;
+            player.maxMp += mpIncrease;
+            player.hp = player.maxHp; // レベルアップで全回復
+            player.mp = player.maxMp;
+            
+            player.atk += Math.floor(Math.random() * 3) + 1;
+            player.def += Math.floor(Math.random() * 2) + 1;
+            player.int += Math.floor(Math.random() * 3) + 1;
+            player.agi += Math.floor(Math.random() * 2) + 1;
+            
+            ui.showText(`レベルアップ！ レベル${player.level}に なった！`);
+            
+            // 新しい魔法習得
+            this.learnNewSpells(player.level);
+        }
+        
+        ui.updateStatus();
+    }
+
+    learnNewSpells(level) {
+        const spellLevels = {
+            3: 'girame',
+            5: 'cure',
+            7: 'scaral',
+            10: 'pioral',
+            12: 'torch',
+            15: 'return'
+        };
+        
+        const newSpell = spellLevels[level];
+        if (newSpell && !gameState.player.spells.includes(newSpell)) {
+            gameState.player.spells.push(newSpell);
+            const spell = SPELLS.find(s => s.id === newSpell);
+            ui.showText(`あたらしい まほう ${spell.name}を おぼえた！`);
+        }
+    }
+
+    playerLoses() {
+        audioSystem.stopBGM();
+        ui.showText('しかし ちからつきてしまった……');
+        
+        setTimeout(() => {
+            // ゲームオーバー処理
+            ui.showText('GAME OVER');
+            setTimeout(() => {
+                this.resetGame();
+            }, 3000);
+        }, 3000);
+    }
+
+    endBattle() {
+        gameState.battle.active = false;
+        gameState.scene = 'field';
+        audioSystem.startBGM('field');
+        ui.hideCommands();
+        this.updateDisplay();
+    }
+
+    startEnding() {
+        gameState.scene = 'ending';
+        audioSystem.stopBGM();
+        this.graphics.clear();
+        
+        setTimeout(() => {
+            audioSystem.playSE('bell');
+        }, 1000);
+        
+        const endingTexts = [
+            'ついに まおうを たおした。',
+            'そして せかいに へいわが おとずれた。',
+            'また たたかうひまで——',
+            'ゆうしゃは つかのまの きゅうそくに',
+            'はいったのであった……'
+        ];
+        
+        let textIndex = 0;
+        const showEndingText = () => {
+            if (textIndex < endingTexts.length) {
+                ui.showText(endingTexts[textIndex]);
+                textIndex++;
+                setTimeout(showEndingText, 4000);
+            } else {
+                setTimeout(() => {
+                    audioSystem.startBGM('ending');
+                    ui.showText('THE END');
+                    gameState.flags.gameCompleted = true;
+                    
+                    setTimeout(() => {
+                        ui.showText('ありがとうございました！');
+                        setTimeout(() => {
+                            this.resetGame();
+                        }, 5000);
+                    }, 3000);
+                }, 2000);
+            }
+        };
+        
+        showEndingText();
+    }
+
+    resetGame() {
+        // ゲーム状態リセット
+        gameState.scene = 'loading';
+        gameState.player = {
+            name: 'フーミン',
+            level: 1,
+            hp: 20,
+            maxHp: 20,
+            mp: 6,
+            maxMp: 6,
+            exp: 0,
+            nextExp: 14,
+            gold: 0,
+            atk: 5,
+            def: 3,
+            int: 4,
+            agi: 6,
+            x: 400,
+            y: 300,
+            direction: 0,
+            equipment: {
+                weapon: null,
+                shield: null,
+                armor: null,
+                helmet: null,
+                accessory: null
+            },
+            spells: ['hibana', 'hoimi'],
+            inventory: [],
+            statusEffects: []
+        };
+        
+        gameState.flags = {
+            introShown: false,
+            maouDefeated: false,
+            gameCompleted: false
+        };
+        
+        gameState.world.torchSteps = 0;
+        
+        Object.values(gameState.world.locations).forEach(loc => {
+            loc.visited = false;
+        });
+        
+        ui.hideCommands();
+        ui.hideWindow();
+        ui.clearText();
+        ui.updateStatus();
+        
+        setTimeout(() => {
+            this.startGame();
+        }, 2000);
+    }
+
+    handleBattleInput(key) {
+        if (gameState.ui.showingCommands) {
+            this.handleCommandInput(key);
+        }
+    }
+
+    handleLocationInput(key) {
+        if (gameState.ui.windowOpen) {
+            if (key === 'KeyX') {
+                audioSystem.playSE('cancel');
+                ui.hideWindow();
+            }
+            return;
+        }
+
+        if (gameState.ui.showingCommands) {
+            this.handleCommandInput(key);
+        } else if (key === 'KeyX') {
+            audioSystem.playSE('cancel');
+            this.exitLocation();
+        }
+    }
+
+    handleCaveInput(key) {
+        if (gameState.ui.windowOpen) {
+            if (key === 'KeyX') {
+                audioSystem.playSE('cancel');
+                ui.hideWindow();
+            }
+            return;
+        }
+
+        if (gameState.ui.showingCommands) {
+            this.handleCommandInput(key);
+        } else if (key === 'KeyX') {
+            audioSystem.playSE('cancel');
+            this.exitLocation();
+        }
+    }
+
+    handleCommandInput(key) {
+        switch (key) {
+            case 'ArrowUp':
+            case 'ArrowLeft':
+                ui.selectCommand('prev');
+                break;
+            case 'ArrowDown':
+            case 'ArrowRight':
+                ui.selectCommand('next');
+                break;
+            case 'KeyZ':
+                audioSystem.playSE('select');
+                ui.activateCommand();
+                break;
+            case 'KeyX':
+                audioSystem.playSE('cancel');
+                ui.hideCommands();
+                break;
+        }
+    }
+
+    updatePlayerStats() {
+        const player = gameState.player;
+        let totalAtk = player.atk;
+        let totalDef = player.def;
+        let totalInt = player.int;
+        let totalAgi = player.agi;
+        
+        // 装備ボーナス計算
+        Object.values(player.equipment).forEach(equipId => {
+            if (equipId) {
+                const equip = this.findEquipmentById(equipId);
+                if (equip) {
+                    if (equip.atk) totalAtk += equip.atk;
+                    if (equip.def) totalDef += equip.def;
+                    if (equip.int) totalInt += equip.int;
+                    if (equip.agi) totalAgi += equip.agi;
+                }
+            }
+        });
+        
+        // ステータス効果適用
+        player.statusEffects.forEach(effect => {
+            switch (effect.type) {
+                case 'atk':
+                    totalAtk = Math.floor(totalAtk * effect.modifier);
+                    break;
+                case 'def':
+                    totalDef = Math.floor(totalDef * effect.modifier);
+                    break;
+                case 'int':
+                    totalInt = Math.floor(totalInt * effect.modifier);
+                    break;
+                case 'agi':
+                    totalAgi = Math.floor(totalAgi * effect.modifier);
+                    break;
+            }
+        });
+        
+        player.finalAtk = totalAtk;
+        player.finalDef = totalDef;
+        player.finalInt = totalInt;
+        player.finalAgi = totalAgi;
+    }
+
+    findEquipmentById(equipId) {
+        const allEquipment = [
+            ...EQUIPMENT.weapons,
+            ...EQUIPMENT.shields,
+            ...EQUIPMENT.armor,
+            ...EQUIPMENT.helmets,
+            ...EQUIPMENT.accessories
+        ];
+        
+        return allEquipment.find(eq => eq.id === equipId);
+    }
+
+    updateDisplay() {
+        switch (gameState.scene) {
+            case 'field':
+                this.graphics.drawField();
+                break;
+            case 'battle':
+                this.graphics.drawBattle(gameState.battle.enemy);
+                break;
+            case 'town':
+            case 'village':
+            case 'castle':
+                this.graphics.drawTown();
+                break;
+            case 'cave':
+                this.graphics.drawCave();
+                break;
+            case 'opening':
+            case 'ending':
+                this.graphics.clear();
+                break;
+        }
+    }
+
+    // セーブ・ロード機能（メモリ内保存）
+    saveGame() {
+        const saveData = {
+            player: { ...gameState.player },
+            world: { ...gameState.world },
+            flags: { ...gameState.flags },
+            timestamp: Date.now()
+        };
+        
+        // Claude.ai環境ではlocalStorage使用不可のため、メモリ内に保存
+        this.savedGame = saveData;
+        ui.showText('ゲームを セーブしました！');
+    }
+
+    loadGame() {
+        if (this.savedGame) {
+            gameState.player = { ...this.savedGame.player };
+            gameState.world = { ...this.savedGame.world };
+            gameState.flags = { ...this.savedGame.flags };
+            
+            gameState.scene = 'field';
+            audioSystem.startBGM('field');
+            ui.updateStatus();
+            this.updateDisplay();
+            ui.showText('ゲームを ロードしました！');
+        } else {
+            ui.showText('セーブデータが ありません。');
+        }
+    }
+
+    autoSave() {
+        // 自動セーブ（戦闘後、町出入り時）
+        this.saveGame();
+    }
+}
+
+// グローバルオブジェクト
+let audioSystem;
+let ui;
+let gameManager;
+
+// ゲーム初期化
+document.addEventListener('DOMContentLoaded', () => {
+    audioSystem = new AudioSystem();
+    ui = new UIManager();
+    gameManager = new GameManager();
+    
+    // UI初期化
+    ui.updateStatus();
+    
+    // ゲーム開始
+    gameManager.init();
+    
+    // タッチデバイス対応
+    if ('ontouchstart' in window) {
+        document.addEventListener('touchstart', () => {
+            if (!audioSystem.initialized) {
+                audioSystem.init();
+            }
+        }, { once: true });
+    }
+    
+    // 可視性変更時の処理（iOS Safari対応）
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            audioSystem.stopBGM();
+        } else {
+            // BGM再開
+            if (gameState.scene === 'field') {
+                audioSystem.startBGM('field');
+            } else if (gameState.scene === 'battle') {
+                audioSystem.startBGM('battle');
+            } else if (['town', 'village', 'castle'].includes(gameState.scene)) {
+                audioSystem.startBGM('town');
+            } else if (gameState.scene === 'cave') {
+                audioSystem.startBGM('cave');
+            }
+        }
+    });
+    
+    // デバッグ用コマンド（開発時のみ使用）
+    window.debugCommands = {
+        levelUp: () => {
+            gameState.player.level++;
+            gameState.player.exp = 0;
+            gameManager.updatePlayerStats();
+            ui.updateStatus();
+        },
+        addGold: (amount = 1000) => {
+            gameState.player.gold += amount;
+            ui.updateStatus();
+        },
+        healAll: () => {
+            gameState.player.hp = gameState.player.maxHp;
+            gameState.player.mp = gameState.player.maxMp;
+            ui.updateStatus();
+        },
+        learnAllSpells: () => {
+            gameState.player.spells = SPELLS.map(s => s.id);
+        },
+        teleportToMaou: () => {
+            gameState.player.x = gameState.world.locations.maouCastle.x;
+            gameState.player.y = gameState.world.locations.maouCastle.y;
+            gameManager.updateDisplay();
+        }
+    };
+});
+
+// エラーハンドリング
+window.addEventListener('error', (e) => {
+    console.error('Game Error:', e.error);
+    // エラー時の安全な復旧処理
+    if (gameState.scene === 'battle' && gameState.battle.active) {
+        gameManager.endBattle();
+    }
+});
+
+// ゲームループ（必要に応じて追加機能実装）
+setInterval(() => {
+    // 定期的な処理（アニメーション、エフェクトなど）
+    if (gameState.scene === 'battle') {
+        // バトル中のエフェクト更新など
+    }
+}, 100);
+</script>
+</body>
+</html>
