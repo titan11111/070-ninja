@@ -2,38 +2,422 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ファミコン風RPG</title>
+  <title>ドラクエ風RPG</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link rel="stylesheet" href="style.css" />
+  <style>
+/* ==========================
+   ドラクエ1風RPG CSS
+   ========================== */
+
+/* ドットフォント（雰囲気） */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+/* 全体 */
+:root {
+  --bg-dark: #000020;
+  --bg-blue: #0052cc;
+  --window-bg: #002266;
+  --border-light: #4488ff;
+  --text-white: #ffffff;
+  --text-yellow: #ffff00;
+  --text-green: #00ff00;
+  --shadow: #000066;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-dark);
+  color: var(--text-white);
+  font-family: "Press Start 2P", monospace, system-ui, sans-serif;
+  line-height: 1.4;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* メインゲーム画面レイアウト */
+#gameScreen {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "gold-status field-area menu"
+    "player-status field-area battle-area"
+    "message-window message-window message-window";
+  height: 100vh;
+  gap: 8px;
+  padding: 8px;
+  background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-blue) 100%);
+}
+
+/* 左上：ゴールド・経験値 */
+#goldStatus {
+  grid-area: gold-status;
+  background: var(--window-bg);
+  border: 3px solid var(--border-light);
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 10px;
+  text-align: center;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+/* 中央：フィールドエリア */
+#fieldArea {
+  grid-area: field-area;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--window-bg);
+  border: 3px solid var(--border-light);
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 var(--shadow);
+  position: relative;
+}
+
+#map {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  aspect-ratio: 1;
+  border: 2px solid var(--text-white);
+  background: #000;
+  image-rendering: pixelated;
+}
+
+/* 右上：メニュー */
+#menu {
+  grid-area: menu;
+  background: var(--window-bg);
+  border: 3px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.menu-btn {
+  padding: 8px;
+  background: var(--bg-dark);
+  border: 2px solid var(--border-light);
+  border-radius: 4px;
+  color: var(--text-white);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+
+.menu-btn:hover {
+  background: var(--border-light);
+  color: var(--bg-dark);
+}
+
+.menu-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* 左下：プレイヤーステータス */
+#playerStatus {
+  grid-area: player-status;
+  background: var(--window-bg);
+  border: 3px solid var(--border-light);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.status-label {
+  color: var(--text-yellow);
+}
+
+.status-value {
+  color: var(--text-white);
+}
+
+/* 右下：戦闘エリア（通常は非表示） */
+#battleArea {
+  grid-area: battle-area;
+  background: var(--window-bg);
+  border: 3px solid var(--border-light);
+  border-radius: 8px;
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+/* 戦闘時のモンスター表示 */
+#enemyContainer {
+  text-align: center;
+  background: var(--bg-dark);
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  padding: 16px;
+  width: 100%;
+}
+
+#enemySprite {
+  width: 80px;
+  height: 80px;
+  margin: 8px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#enemyStatus {
+  font-size: 10px;
+  color: var(--text-green);
+  margin-top: 8px;
+}
+
+/* 戦闘コマンド */
+#commands {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.cmd-btn {
+  padding: 12px;
+  background: linear-gradient(180deg, var(--border-light), var(--bg-blue));
+  border: 2px solid var(--text-white);
+  border-radius: 6px;
+  color: var(--text-white);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow: 2px 2px 0 var(--shadow);
+}
+
+.cmd-btn:hover {
+  background: linear-gradient(180deg, var(--text-white), var(--border-light));
+  color: var(--bg-dark);
+}
+
+.cmd-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+
+/* 下部：メッセージウィンドウ */
+#messageWindow {
+  grid-area: message-window;
+  background: var(--window-bg);
+  border: 3px solid var(--border-light);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 12px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  box-shadow: 2px 2px 0 var(--shadow);
+  color: var(--text-white);
+}
+
+#battleLog {
+  width: 100%;
+  text-align: left;
+}
+
+/* モバイル操作パッド */
+#mobileControls {
+  position: fixed;
+  bottom: 120px;
+  right: 16px;
+  display: none;
+  z-index: 1000;
+}
+
+.control-row {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 2px 0;
+}
+
+.dir-btn {
+  width: 50px;
+  height: 50px;
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  background: var(--window-bg);
+  color: var(--text-white);
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+
+.dir-btn:active {
+  background: var(--border-light);
+  color: var(--bg-dark);
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+/* 戦闘モード時の調整 */
+.battle-mode #fieldArea {
+  display: none;
+}
+
+.battle-mode #battleArea {
+  display: flex;
+  grid-area: field-area;
+}
+
+.battle-mode #goldStatus,
+.battle-mode #menu {
+  opacity: 0.7;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  #gameScreen {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto 1fr auto auto;
+    grid-template-areas:
+      "gold-status"
+      "menu"
+      "field-area"
+      "player-status"
+      "message-window";
+    gap: 4px;
+    padding: 4px;
+  }
+  
+  .battle-mode #gameScreen {
+    grid-template-areas:
+      "gold-status"
+      "menu"
+      "battle-area"
+      "player-status"
+      "message-window";
+  }
+  
+  #mobileControls {
+    display: block;
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  #goldStatus, #menu, #playerStatus {
+    font-size: 8px;
+  }
+  
+  .cmd-btn {
+    font-size: 10px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  #gameScreen {
+    padding: 2px;
+    gap: 2px;
+  }
+  
+  .dir-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+  
+  #messageWindow {
+    min-height: 60px;
+    padding: 8px;
+    font-size: 10px;
+  }
+}
+
+/* タッチデバイス対応 */
+@media (hover: none) and (pointer: coarse) {
+  #mobileControls {
+    display: block;
+  }
+}
+  </style>
 </head>
 <body>
-  <h1>ファミコン風RPG</h1>
-
-  <!-- フィールド描画キャンバス -->
-  <div id="gameContainer">
-    <canvas id="map" width="320" height="320" aria-label="field"></canvas>
-  </div>
-
-  <!-- 戦闘画面UI -->
-  <div id="battleUI">
-    <!-- 敵ウィンドウ -->
-    <div id="enemyContainer" class="window">
-      <div id="enemyArea" class="line" style="display:none;"></div>
-      <div id="enemySprite" class="sprite" style="display:none;"></div>
-      <div id="enemyStatus" class="line" style="display:none;"></div>
+  <div id="gameScreen">
+    <!-- 左上：ゴールド・経験値表示 -->
+    <div id="goldStatus">
+      <div class="status-row">
+        <span class="status-label">GOLD</span>
+        <span id="goldValue" class="status-value">0</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">EXP</span>
+        <span id="expValue" class="status-value">0</span>
+      </div>
     </div>
 
-    <!-- プレイヤー情報 -->
-    <div id="playerStatus" class="window" style="display:none;"></div>
+    <!-- 中央：フィールドエリア -->
+    <div id="fieldArea">
+      <canvas id="map" width="320" height="320" aria-label="field"></canvas>
+    </div>
 
-    <!-- コマンド＋メッセージ -->
-    <div id="battleRow">
-      <div id="commands" class="commands window" style="display:none;">
-        <button id="attackBtn" class="cmd-btn" aria-label="attack">こうげき</button>
-        <button id="magicBtn"  class="cmd-btn" aria-label="magic">まほう</button>
-        <button id="runBtn"    class="cmd-btn" aria-label="run">にげる</button>
+    <!-- 右上：メニュー -->
+    <div id="menu">
+      <button class="menu-btn" onclick="showStatus()">つよさ</button>
+      <button class="menu-btn" onclick="showItems()">どうぐ</button>
+      <button class="menu-btn" onclick="showMagic()">じゅもん</button>
+      <button class="menu-btn" onclick="saveGame()">きろく</button>
+    </div>
+
+    <!-- 左下：プレイヤーステータス -->
+    <div id="playerStatus">
+      <div class="status-row">
+        <span class="status-label">ゆうしゃ</span>
+        <span class="status-label">LV.<span id="levelValue">1</span></span>
       </div>
-      <div id="battleLog" class="window log" style="display:none;" aria-live="polite"></div>
+      <div class="status-row">
+        <span class="status-label">HP</span>
+        <span class="status-value"><span id="hpValue">30</span>/<span id="maxHpValue">30</span></span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">MP</span>
+        <span class="status-value"><span id="mpValue">10</span>/<span id="maxMpValue">10</span></span>
+      </div>
+    </div>
+
+    <!-- 右下：戦闘エリア（通常は非表示） -->
+    <div id="battleArea">
+      <div id="enemyContainer">
+        <div id="enemyArea" style="display:none;"></div>
+        <div id="enemySprite" style="display:none;"></div>
+        <div id="enemyStatus" style="display:none;"></div>
+      </div>
+      
+      <div id="commands" style="display:none;">
+        <button id="attackBtn" class="cmd-btn">こうげき</button>
+        <button id="magicBtn" class="cmd-btn">じゅもん</button>
+        <button id="runBtn" class="cmd-btn">にげる</button>
+      </div>
+    </div>
+
+    <!-- 下部：メッセージウィンドウ -->
+    <div id="messageWindow">
+      <div id="battleLog">フィールドを移動してモンスターを探そう！</div>
     </div>
   </div>
 
@@ -43,12 +427,694 @@
       <button class="dir-btn" data-dir="up" aria-label="up">↑</button>
     </div>
     <div class="control-row">
-      <button class="dir-btn" data-dir="left"  aria-label="left">←</button>
-      <button class="dir-btn" data-dir="down"  aria-label="down">↓</button>
+      <button class="dir-btn" data-dir="left" aria-label="left">←</button>
+      <button class="dir-btn" data-dir="down" aria-label="down">↓</button>
       <button class="dir-btn" data-dir="right" aria-label="right">→</button>
     </div>
   </div>
 
-  <script src="game.js"></script>
+  <script>
+// ==========================
+// ドラクエ風RPG script.js
+// ==========================
+
+// --------- 基本定義（タイル・マップ） ---------
+const TILE_SIZE = 64;
+const MAP_W = 5;
+const MAP_H = 5;
+
+// タイル種別（数値で管理）
+const T = {
+  GRASS: 0,
+  FOREST: 1,
+  WATER: 2,
+  VILLAGE: 3,
+  CASTLE: 4,
+  DESERT: 5,
+  MOUNTAIN: 6
+};
+
+// 地形ごとの色（ベース）
+const TILE_COLORS = {
+  [T.GRASS]:   "#1f8f2e",
+  [T.FOREST]:  "#0f5f20",
+  [T.WATER]:   "#1173c2",
+  [T.VILLAGE]: "#3a2a15",
+  [T.CASTLE]:  "#666666",
+  [T.DESERT]:  "#c8b26a",
+  [T.MOUNTAIN]:"#7b4a2b"
+};
+
+// --------- DOM取得 ---------
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d");
+
+const gameScreen = document.getElementById("gameScreen");
+const fieldArea = document.getElementById("fieldArea");
+const battleArea = document.getElementById("battleArea");
+
+const enemyArea = document.getElementById("enemyArea");
+const enemySprite = document.getElementById("enemySprite");
+const enemyStatus = document.getElementById("enemyStatus");
+const commands = document.getElementById("commands");
+const battleLog = document.getElementById("battleLog");
+
+const goldValue = document.getElementById("goldValue");
+const expValue = document.getElementById("expValue");
+const levelValue = document.getElementById("levelValue");
+const hpValue = document.getElementById("hpValue");
+const maxHpValue = document.getElementById("maxHpValue");
+const mpValue = document.getElementById("mpValue");
+const maxMpValue = document.getElementById("maxMpValue");
+
+// --------- プレイヤー ---------
+const player = {
+  x: 2, y: 2,
+  hp: 30, maxHp: 30,
+  mp: 10, maxMp: 10,
+  atk: 6, def: 2,
+  level: 1,
+  exp: 0, nextExp: 20,
+  gold: 0
+};
+
+// --------- マップ（2列 × 3行 = 6面） ---------
+const m11 = [
+  [T.GRASS,T.GRASS, T.FOREST,T.FOREST,T.VILLAGE],
+  [T.GRASS,T.GRASS, T.FOREST,T.FOREST,T.VILLAGE],
+  [T.GRASS,T.GRASS, T.GRASS, T.GRASS, T.GRASS ],
+  [T.GRASS,T.FOREST,T.FOREST,T.GRASS, T.GRASS ],
+  [T.DESERT,T.DESERT,T.GRASS, T.GRASS, T.CASTLE]
+];
+const m12 = [
+  [T.WATER, T.WATER, T.GRASS, T.GRASS, T.GRASS ],
+  [T.WATER, T.GRASS, T.GRASS, T.FOREST,T.FOREST],
+  [T.GRASS, T.GRASS, T.GRASS, T.GRASS, T.GRASS ],
+  [T.FOREST,T.FOREST,T.GRASS, T.CASTLE,T.CASTLE],
+  [T.GRASS, T.GRASS, T.GRASS, T.CASTLE,T.CASTLE]
+];
+
+const m21 = [
+  [T.FOREST,T.FOREST,T.FOREST,T.GRASS ,T.GRASS ],
+  [T.FOREST,T.VILLAGE,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.FOREST,T.GRASS ,T.GRASS ,T.GRASS ,T.DESERT],
+  [T.FOREST,T.GRASS ,T.GRASS ,T.GRASS ,T.DESERT],
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ,T.CASTLE]
+];
+const m22 = [
+  [T.CASTLE,T.CASTLE,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.CASTLE,T.CASTLE,T.GRASS ,T.FOREST,T.FOREST],
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.FOREST,T.FOREST],
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.GRASS ,T.GRASS ,T.VILLAGE,T.GRASS ,T.GRASS ]
+];
+
+const m31 = [
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.GRASS ,T.FOREST,T.FOREST,T.GRASS ,T.GRASS ],
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.VILLAGE,T.GRASS ,T.MOUNTAIN,T.MOUNTAIN,T.GRASS ],
+  [T.CASTLE,T.CASTLE,T.MOUNTAIN,T.GRASS ,T.GRASS ]
+];
+const m32 = [
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.FOREST,T.FOREST,T.FOREST,T.FOREST,T.FOREST],
+  [T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ,T.GRASS ],
+  [T.GRASS ,T.DESERT,T.DESERT,T.VILLAGE,T.VILLAGE],
+  [T.GRASS ,T.DESERT,T.DESERT,T.CASTLE ,T.CASTLE ]
+];
+
+const WORLD = [
+  [m11, m12],
+  [m21, m22],
+  [m31, m32]
+];
+
+let mapRow = 0;
+let mapCol = 0;
+let mapData = WORLD[mapRow][mapCol];
+
+// --------- 村・城のSVG画像化 ---------
+function svgVillage() {
+  return `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+    <rect x="1" y="7" width="6" height="6" fill="#c49a6c"/>
+    <rect x="1" y="5" width="6" height="2" fill="#8b0000"/>
+    <rect x="3" y="9" width="2" height="4" fill="#5b3a29"/>
+    <rect x="9" y="6" width="6" height="7" fill="#c49a6c"/>
+    <rect x="9" y="5" width="6" height="2" fill="#b22222"/>
+    <rect x="11" y="9" width="2" height="4" fill="#5b3a29"/>
+  </svg>`;
+}
+
+function svgCastle() {
+  return `
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+    <rect x="0" y="6" width="4" height="9" fill="#6e6e6e"/>
+    <rect x="12" y="6" width="4" height="9" fill="#6e6e6e"/>
+    <rect x="4" y="8" width="8" height="7" fill="#808080"/>
+    <rect x="6" y="11" width="4" height="4" fill="#000"/>
+    <rect x="1" y="5" width="2" height="1" fill="#d00"/>
+    <rect x="13" y="5" width="2" height="1" fill="#06f"/>
+  </svg>`;
+}
+
+const villageImg = new Image();
+villageImg.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgVillage());
+const castleImg = new Image();
+castleImg.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgCastle());
+
+// --------- マップ描画 ---------
+function drawMap() {
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let y = 0; y < MAP_H; y++) {
+    for (let x = 0; x < MAP_W; x++) {
+      const tile = mapData[y][x];
+      drawTile(x, y, tile);
+    }
+  }
+
+  // プレイヤー（黄色い四角）
+  ctx.fillStyle = "#ffd800";
+  ctx.strokeStyle = "#000";
+  ctx.lineWidth = 2;
+  const px = player.x * TILE_SIZE + 12;
+  const py = player.y * TILE_SIZE + 12;
+  ctx.fillRect(px, py, TILE_SIZE - 24, TILE_SIZE - 24);
+  ctx.strokeRect(px, py, TILE_SIZE - 24, TILE_SIZE - 24);
+}
+
+// 各タイルの表現（8bit簡易）
+function drawTile(tx, ty, tile) {
+  const px = tx * TILE_SIZE;
+  const py = ty * TILE_SIZE;
+
+  // ベース
+  ctx.fillStyle = TILE_COLORS[tile] || "#000";
+  ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+
+  // 模様
+  switch(tile) {
+    case T.GRASS: {
+      // 明るい点で草っぽさ
+      ctx.fillStyle = "rgba(255,255,255,0.1)";
+      for (let i = 0; i < 8; i++) {
+        const rx = px + Math.random() * TILE_SIZE;
+        const ry = py + Math.random() * TILE_SIZE;
+        ctx.fillRect(rx, ry, 2, 2);
+      }
+      break;
+    }
+    case T.FOREST: {
+      // 小さな丸で樹木感
+      ctx.fillStyle = "#1d7a2b";
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.arc(px + 16 + i * 8, py + 16 + (i * 12) % 32, 6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+    case T.WATER: {
+      // さざ波
+      ctx.strokeStyle = "#4da6ff";
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(px + 8, py + 16 + i * 16);
+        ctx.quadraticCurveTo(px + 32, py + 8 + i * 16, px + 56, py + 16 + i * 16);
+        ctx.stroke();
+      }
+      break;
+    }
+    case T.DESERT: {
+      // 砂模様
+      ctx.fillStyle = "rgba(139,69,19,0.3)";
+      for (let i = 0; i < 12; i++) {
+        const rx = px + Math.random() * TILE_SIZE;
+        const ry = py + Math.random() * TILE_SIZE;
+        ctx.fillRect(rx, ry, 3, 1);
+      }
+      break;
+    }
+    case T.MOUNTAIN: {
+      // 三角形の山
+      ctx.fillStyle = "#5a331e";
+      ctx.beginPath();
+      ctx.moveTo(px + 12, py + TILE_SIZE - 8);
+      ctx.lineTo(px + TILE_SIZE / 2, py + 8);
+      ctx.lineTo(px + TILE_SIZE - 12, py + TILE_SIZE - 8);
+      ctx.closePath();
+      ctx.fill();
+      // 雪
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.moveTo(px + TILE_SIZE / 2, py + 8);
+      ctx.lineTo(px + TILE_SIZE / 2 - 6, py + 18);
+      ctx.lineTo(px + TILE_SIZE / 2 + 6, py + 18);
+      ctx.closePath();
+      ctx.fill();
+      break;
+    }
+    case T.VILLAGE: {
+      // 下地は草
+      ctx.fillStyle = TILE_COLORS[T.GRASS];
+      ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+      // 村アイコン
+      if (villageImg.complete) {
+        ctx.drawImage(villageImg, px + 8, py + 8, TILE_SIZE - 16, TILE_SIZE - 16);
+      }
+      break;
+    }
+    case T.CASTLE: {
+      // 下地は石
+      ctx.fillStyle = "#7b7b7b";
+      ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+      // 城アイコン
+      if (castleImg.complete) {
+        ctx.drawImage(castleImg, px + 8, py + 6, TILE_SIZE - 16, TILE_SIZE - 16);
+      }
+      break;
+    }
+  }
+
+  // タイル境界の細い線
+  ctx.strokeStyle = "rgba(0,0,0,0.2)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(px + 0.5, py + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+}
+
+// --------- 敵データ ---------
+const ENEMIES = {
+  slime: { id: "slime", name: "スライム", hp: 10, atk: 3, exp: 5, gold: 3 },
+  goblin: { id: "goblin", name: "ゴブリン", hp: 16, atk: 4, exp: 8, gold: 6 },
+  mushroom: { id: "mushroom", name: "毒きのこ", hp: 14, atk: 4, exp: 10, gold: 7 },
+  demon: { id: "demon", name: "魔族", hp: 22, atk: 6, exp: 16, gold: 12 },
+  octopus: { id: "octopus", name: "たこ入道", hp: 24, atk: 6, exp: 18, gold: 14 },
+  dragon: { id: "dragon", name: "ドラゴン", hp: 40, atk: 9, exp: 35, gold: 30 },
+  devil: { id: "devil", name: "悪魔", hp: 28, atk: 7, exp: 22, gold: 18 }
+};
+
+// 敵ドット絵（SVG文字列）
+const ENEMY_SVG = {
+  slime: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <circle cx="8" cy="10" r="5" fill="#4da6ff"/>
+      <circle cx="8" cy="9" r="3" fill="#66b3ff"/>
+      <rect x="5" y="8" width="2" height="2" fill="#fff"/>
+      <rect x="9" y="8" width="2" height="2" fill="#fff"/>
+      <rect x="6" y="9" width="1" height="1" fill="#000"/>
+      <rect x="9" y="9" width="1" height="1" fill="#000"/>
+    </svg>`,
+  goblin: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <rect x="4" y="4" width="8" height="8" fill="#4d7c0f"/>
+      <rect x="5" y="6" width="2" height="2" fill="#fff"/>
+      <rect x="9" y="6" width="2" height="2" fill="#fff"/>
+      <rect x="6" y="7" width="1" height="1" fill="#000"/>
+      <rect x="10" y="7" width="1" height="1" fill="#000"/>
+      <rect x="7" y="9" width="2" height="1" fill="#dc2626"/>
+      <rect x="2" y="3" width="2" height="3" fill="#4d7c0f"/>
+      <rect x="12" y="3" width="2" height="3" fill="#4d7c0f"/>
+    </svg>`,
+  mushroom: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <ellipse cx="8" cy="6" rx="5" ry="3" fill="#7c3aed"/>
+      <rect x="3" y="6" width="2" height="1" fill="#fff"/>
+      <rect x="11" y="6" width="2" height="1" fill="#fff"/>
+      <rect x="7" y="9" width="2" height="5" fill="#f3f4f6"/>
+      <rect x="6" y="14" width="4" height="1" fill="#d1d5db"/>
+    </svg>`,
+  demon: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <rect x="4" y="4" width="8" height="8" fill="#7f1d1d"/>
+      <rect x="5" y="6" width="2" height="2" fill="#fef08a"/>
+      <rect x="9" y="6" width="2" height="2" fill="#fef08a"/>
+      <rect x="6" y="7" width="1" height="1" fill="#dc2626"/>
+      <rect x="9" y="7" width="1" height="1" fill="#dc2626"/>
+      <rect x="7" y="9" width="2" height="1" fill="#fff"/>
+      <rect x="2" y="2" width="2" height="4" fill="#7f1d1d"/>
+      <rect x="12" y="2" width="2" height="4" fill="#7f1d1d"/>
+    </svg>`,
+  octopus: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <circle cx="8" cy="7" r="4" fill="#ec4899"/>
+      <rect x="5" y="6" width="2" height="2" fill="#fff"/>
+      <rect x="9" y="6" width="2" height="2" fill="#fff"/>
+      <rect x="6" y="7" width="1" height="1" fill="#000"/>
+      <rect x="10" y="7" width="1" height="1" fill="#000"/>
+      <rect x="4" y="11" width="1" height="4" fill="#ec4899"/>
+      <rect x="6" y="12" width="1" height="3" fill="#ec4899"/>
+      <rect x="9" y="12" width="1" height="3" fill="#ec4899"/>
+      <rect x="11" y="11" width="1" height="4" fill="#ec4899"/>
+    </svg>`,
+  dragon: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <rect x="3" y="4" width="10" height="8" fill="#166534"/>
+      <rect x="5" y="6" width="2" height="2" fill="#dc2626"/>
+      <rect x="9" y="6" width="2" height="2" fill="#dc2626"/>
+      <rect x="6" y="7" width="1" height="1" fill="#000"/>
+      <rect x="10" y="7" width="1" height="1" fill="#000"/>
+      <rect x="6" y="9" width="4" height="2" fill="#dc2626"/>
+      <rect x="1" y="2" width="3" height="2" fill="#166534"/>
+      <rect x="12" y="2" width="3" height="2" fill="#166534"/>
+    </svg>`,
+  devil: `
+    <svg width="80" height="80" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+      <rect width="16" height="16" fill="#000020"/>
+      <rect x="4" y="4" width="8" height="8" fill="#581c87"/>
+      <rect x="5" y="6" width="2" height="2" fill="#fff"/>
+      <rect x="9" y="6" width="2" height="2" fill="#fff"/>
+      <rect x="6" y="7" width="1" height="1" fill="#dc2626"/>
+      <rect x="10" y="7" width="1" height="1" fill="#dc2626"/>
+      <rect x="7" y="9" width="2" height="1" fill="#dc2626"/>
+      <rect x="2" y="1" width="2" height="3" fill="#581c87"/>
+      <rect x="12" y="1" width="2" height="3" fill="#581c87"/>
+    </svg>`
+};
+
+// --------- 戦闘制御 ---------
+let inBattle = false;
+let enemy = null;
+
+// 内部ログ（保持は複数、表示は1行）
+const logs = [];
+function setLog(msg) {
+  logs.push(msg);
+  battleLog.innerText = msg;
+}
+
+// UI表示/非表示
+function showBattleUI(flag) {
+  if (flag) {
+    gameScreen.classList.add('battle-mode');
+    enemyArea.style.display = "block";
+    enemySprite.style.display = "flex";
+    enemyStatus.style.display = "block";
+    commands.style.display = "flex";
+  } else {
+    gameScreen.classList.remove('battle-mode');
+    enemyArea.style.display = "none";
+    enemySprite.style.display = "none";
+    enemyStatus.style.display = "none";
+    commands.style.display = "none";
+  }
+}
+
+// 敵ランダム（地形で重み付け可：簡易）
+function pickEnemyByTile(tile) {
+  const poolGrass = ["slime", "goblin", "mushroom"];
+  const poolForest = ["goblin", "mushroom", "demon"];
+  const poolDesert = ["mushroom", "octopus", "devil"];
+  const poolMount = ["goblin", "devil", "dragon"];
+  const poolWater = ["octopus", "mushroom"];
+  const poolTown = []; // 村・城は原則エンカウントなし
+
+  let pool = poolGrass;
+  if (tile === T.FOREST) pool = poolForest;
+  if (tile === T.DESERT) pool = poolDesert;
+  if (tile === T.MOUNTAIN) pool = poolMount;
+  if (tile === T.WATER) pool = poolWater;
+  if (tile === T.VILLAGE || tile === T.CASTLE) pool = poolTown;
+
+  if (pool.length === 0) return null;
+  const id = pool[Math.floor(Math.random() * pool.length)];
+  return { ...ENEMIES[id] }; // コピー
+}
+
+// エンカウント率（地形別）
+function getEncounterRate(tile) {
+  switch (tile) {
+    case T.GRASS: return 0.14;
+    case T.FOREST: return 0.22;
+    case T.DESERT: return 0.18;
+    case T.MOUNTAIN: return 0.12;
+    case T.WATER: return 0.06;
+    case T.VILLAGE: return 0.00;
+    case T.CASTLE: return 0.00;
+    default: return 0.12;
+  }
+}
+
+// 戦闘開始
+function startBattle(tile) {
+  const e = pickEnemyByTile(tile);
+  if (!e) return; // 村・城など
+  inBattle = true;
+  enemy = e;
+
+  enemyArea.textContent = `${enemy.name} があらわれた！`;
+  enemySprite.innerHTML = ENEMY_SVG[enemy.id] || "";
+  enemyStatus.textContent = `HP:${enemy.hp}`;
+  updatePlayerStatus();
+
+  showBattleUI(true);
+  setLog(`${enemy.name} が あらわれた！`);
+}
+
+// 戦闘終了
+function endBattle(message) {
+  setLog(message);
+  setTimeout(() => {
+    inBattle = false;
+    enemy = null;
+    showBattleUI(false);
+    drawMap(); // フィールド復帰
+  }, 1200);
+}
+
+// プレイヤー・敵のターン
+function playerAttack() {
+  if (!inBattle) return;
+  const dmg = Math.max(1, player.atk - 1 + Math.floor(Math.random() * 3));
+  enemy.hp -= dmg;
+  setLog(`ゆうしゃの こうげき！ ${dmg}ダメージ！`);
+  enemyStatus.textContent = `HP:${Math.max(0, enemy.hp)}`;
+  if (enemy.hp <= 0) {
+    player.exp += enemy.exp;
+    player.gold += enemy.gold;
+    levelUpCheck();
+    updatePlayerStatus();
+    endBattle(`${enemy.name} を たおした！`);
+    return;
+  }
+  setTimeout(enemyAttack, 800);
+}
+
+function playerMagic() {
+  if (!inBattle) return;
+  if (player.mp < 3) {
+    setLog("MPが たりない！");
+    return;
+  }
+  player.mp -= 3;
+  const dmg = 6 + Math.floor(Math.random() * 4);
+  enemy.hp -= dmg;
+  setLog(`ホイミ！ ${dmg}ダメージ！`);
+  enemyStatus.textContent = `HP:${Math.max(0, enemy.hp)}`;
+  updatePlayerStatus();
+  if (enemy.hp <= 0) {
+    player.exp += enemy.exp;
+    player.gold += enemy.gold;
+    levelUpCheck();
+    updatePlayerStatus();
+    endBattle(`${enemy.name} は きえさった！`);
+    return;
+  }
+  setTimeout(enemyAttack, 800);
+}
+
+function playerRun() {
+  if (!inBattle) return;
+  if (Math.random() < 0.6) {
+    endBattle("うまく にげきれた！");
+  } else {
+    setLog("にげられない！");
+    setTimeout(enemyAttack, 700);
+  }
+}
+
+function enemyAttack() {
+  if (!inBattle || !enemy) return;
+  const dmg = Math.max(1, enemy.atk - player.def + Math.floor(Math.random() * 3));
+  player.hp -= dmg;
+  if (player.hp < 0) player.hp = 0;
+  setLog(`${enemy.name} の こうげき！ ${dmg}ダメージ！`);
+  updatePlayerStatus();
+  if (player.hp <= 0) {
+    endBattle("ゆうしゃは たおれた…");
+    // ゲームオーバー処理可能
+    setTimeout(() => {
+      player.hp = player.maxHp;
+      player.mp = player.maxMp;
+      player.x = 2;
+      player.y = 2;
+      mapRow = 0;
+      mapCol = 0;
+      mapData = WORLD[mapRow][mapCol];
+      updatePlayerStatus();
+      drawMap();
+      setLog("りゅうおうの城で 目を覚ました…");
+    }, 2000);
+  }
+}
+
+// レベルアップ
+function levelUpCheck() {
+  if (player.exp >= player.nextExp) {
+    player.level++;
+    player.exp = 0;
+    player.nextExp += 20;
+    player.maxHp += 6;
+    player.maxMp += 2;
+    player.atk += 2;
+    player.def += 1;
+    player.hp = player.maxHp;
+    player.mp = player.maxMp;
+    setLog("レベルが あがった！");
+    updatePlayerStatus();
+  }
+}
+
+function updatePlayerStatus() {
+  goldValue.textContent = player.gold;
+  expValue.textContent = player.exp;
+  levelValue.textContent = player.level;
+  hpValue.textContent = player.hp;
+  maxHpValue.textContent = player.maxHp;
+  mpValue.textContent = player.mp;
+  maxMpValue.textContent = player.maxMp;
+}
+
+// --------- 移動とマップ切替 ---------
+function movePlayer(dx, dy) {
+  if (inBattle) return;
+
+  let nx = player.x + dx;
+  let ny = player.y + dy;
+
+  // 端でマップ切替
+  if (nx < 0) {
+    if (mapCol > 0) {
+      mapCol--;
+      mapData = WORLD[mapRow][mapCol];
+      nx = MAP_W - 1;
+    } else return;
+  } else if (nx >= MAP_W) {
+    if (mapCol < WORLD[0].length - 1) {
+      mapCol++;
+      mapData = WORLD[mapRow][mapCol];
+      nx = 0;
+    } else return;
+  }
+
+  if (ny < 0) {
+    if (mapRow > 0) {
+      mapRow--;
+      mapData = WORLD[mapRow][mapCol];
+      ny = MAP_H - 1;
+    } else return;
+  } else if (ny >= MAP_H) {
+    if (mapRow < WORLD.length - 1) {
+      mapRow++;
+      mapData = WORLD[mapRow][mapCol];
+      ny = 0;
+    } else return;
+  }
+
+  // 反映
+  player.x = nx;
+  player.y = ny;
+  drawMap();
+
+  // エンカウント判定（地形依存）
+  const tile = mapData[player.y][player.x];
+  const rate = getEncounterRate(tile);
+  if (Math.random() < rate) startBattle(tile);
+}
+
+// --------- 入力（キーボード・タッチ・補助ボタン） ---------
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowUp") movePlayer(0, -1);
+  if (e.key === "ArrowDown") movePlayer(0, 1);
+  if (e.key === "ArrowLeft") movePlayer(-1, 0);
+  if (e.key === "ArrowRight") movePlayer(1, 0);
+});
+
+// スワイプ
+let touchSX = null, touchSY = null;
+canvas.addEventListener("touchstart", (e) => {
+  if (inBattle) return;
+  const t = e.changedTouches[0];
+  touchSX = t.clientX;
+  touchSY = t.clientY;
+}, { passive: true });
+
+canvas.addEventListener("touchend", (e) => {
+  if (inBattle) return;
+  if (touchSX == null || touchSY == null) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchSX;
+  const dy = t.clientY - touchSY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx > 30) movePlayer(1, 0);
+    else if (dx < -30) movePlayer(-1, 0);
+  } else {
+    if (dy > 30) movePlayer(0, 1);
+    else if (dy < -30) movePlayer(0, -1);
+  }
+  touchSX = touchSY = null;
+}, { passive: true });
+
+// 画面上の補助ボタン
+(function attachMobileDpad() {
+  const pad = document.querySelectorAll(".dir-btn");
+  pad.forEach(b => {
+    b.addEventListener("click", () => {
+      const dir = b.dataset.dir;
+      if (dir === "up") movePlayer(0, -1);
+      if (dir === "down") movePlayer(0, 1);
+      if (dir === "left") movePlayer(-1, 0);
+      if (dir === "right") movePlayer(1, 0);
+    });
+  });
+})();
+
+// 戦闘コマンド
+document.getElementById("attackBtn").addEventListener("click", () => playerAttack());
+document.getElementById("magicBtn").addEventListener("click", () => playerMagic());
+document.getElementById("runBtn").addEventListener("click", () => playerRun());
+
+// --------- メニュー機能（ダミー） ---------
+function showStatus() {
+  setLog(`ゆうしゃ LV.${player.level} HP:${player.hp}/${player.maxHp} MP:${player.mp}/${player.maxMp} ATK:${player.atk} DEF:${player.def}`);
+}
+
+function showItems() {
+  setLog("どうぐを もっていない。");
+}
+
+function showMagic() {
+  setLog("ホイミ（回復の呪文）を覚えている。");
+}
+
+function saveGame() {
+  setLog("ぼうけんの書に きろくしました。");
+}
+
+// --------- 初期描画 ---------
+drawMap();
+showBattleUI(false);
+updatePlayerStatus();
+setLog("アレフガルドの世界へ ようこそ！");
+  </script>
 </body>
 </html>
