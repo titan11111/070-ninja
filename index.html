@@ -2,11 +2,11 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>ドラクエ風RPG</title>
+  <title>光の勇者 - RPG</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <style>
 /* ==========================
-   ドラクエ1風RPG CSS
+   RPG CSS（ストーリー付き）
    ========================== */
 
 /* ドットフォント（雰囲気） */
@@ -22,6 +22,8 @@
   --text-yellow: #ffff00;
   --text-green: #00ff00;
   --shadow: #000066;
+  --story-bg: #001133;
+  --story-text: #ccddff;
 }
 
 * { box-sizing: border-box; }
@@ -35,6 +37,112 @@ html, body {
   line-height: 1.4;
   overflow: hidden;
   height: 100vh;
+}
+
+/* 画面制御 */
+.screen {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* ストーリー画面 */
+#storyScreen {
+  background: linear-gradient(45deg, var(--story-bg) 0%, var(--bg-dark) 100%);
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+#storyContainer {
+  background: var(--window-bg);
+  border: 4px solid var(--border-light);
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 4px 4px 0 var(--shadow);
+  position: relative;
+}
+
+#storyTitle {
+  font-size: 18px;
+  color: var(--text-yellow);
+  margin-bottom: 24px;
+  text-shadow: 2px 2px 0 var(--shadow);
+}
+
+#storyText {
+  font-size: 12px;
+  color: var(--story-text);
+  line-height: 1.8;
+  margin-bottom: 24px;
+  min-height: 200px;
+  text-align: left;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  white-space: pre-line;
+}
+
+#storyChoices {
+  margin: 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.choice-btn {
+  padding: 12px 16px;
+  background: var(--bg-blue);
+  border: 2px solid var(--border-light);
+  border-radius: 8px;
+  color: var(--text-white);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.1s;
+  box-shadow: 2px 2px 0 var(--shadow);
+  touch-action: manipulation;
+}
+
+.choice-btn:hover {
+  background: var(--border-light);
+  color: var(--bg-dark);
+}
+
+.choice-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--shadow);
+}
+
+.story-btn {
+  padding: 16px 24px;
+  background: linear-gradient(180deg, var(--border-light), var(--bg-blue));
+  border: 3px solid var(--text-white);
+  border-radius: 8px;
+  color: var(--text-white);
+  font-size: 12px;
+  cursor: pointer;
+  margin: 8px;
+  transition: all 0.1s;
+  box-shadow: 3px 3px 0 var(--shadow);
+  touch-action: manipulation;
+}
+
+.story-btn:hover {
+  background: linear-gradient(180deg, var(--text-white), var(--border-light));
+  color: var(--bg-dark);
+}
+
+.story-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--shadow);
 }
 
 /* メインゲーム画面レイアウト */
@@ -110,6 +218,7 @@ html, body {
   cursor: pointer;
   transition: all 0.1s;
   box-shadow: 1px 1px 0 var(--shadow);
+  touch-action: manipulation;
 }
 
 .menu-btn:hover {
@@ -216,6 +325,7 @@ html, body {
 .cmd-btn:active {
   transform: translate(1px, 1px);
   box-shadow: 1px 1px 0 var(--shadow);
+  touch-action: manipulation;
 }
 
 /* 下部：メッセージウィンドウ */
@@ -245,6 +355,8 @@ html, body {
   right: 16px;
   display: none;
   z-index: 1000;
+  transform: scale(1.5);
+  transform-origin: bottom right;
 }
 
 .control-row {
@@ -265,6 +377,7 @@ html, body {
   cursor: pointer;
   transition: all 0.1s;
   box-shadow: 1px 1px 0 var(--shadow);
+  touch-action: manipulation;
 }
 
 .dir-btn:active {
@@ -328,6 +441,24 @@ html, body {
     font-size: 10px;
     padding: 8px;
   }
+  
+  #storyContainer {
+    padding: 16px;
+  }
+  
+  #storyTitle {
+    font-size: 14px;
+  }
+  
+  #storyText {
+    font-size: 10px;
+    min-height: 150px;
+  }
+  
+  .story-btn {
+    font-size: 10px;
+    padding: 12px 16px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -347,6 +478,21 @@ html, body {
     padding: 8px;
     font-size: 10px;
   }
+  
+  #storyContainer {
+    padding: 12px;
+  }
+  
+  #storyTitle {
+    font-size: 12px;
+    margin-bottom: 16px;
+  }
+  
+  #storyText {
+    font-size: 8px;
+    min-height: 120px;
+    padding: 8px;
+  }
 }
 
 /* タッチデバイス対応 */
@@ -358,6 +504,20 @@ html, body {
   </style>
 </head>
 <body>
+  <!-- ストーリー画面 -->
+  <div id="storyScreen" class="screen active">
+    <div id="storyContainer">
+      <div id="storyTitle">光の勇者 ～失われた王国の物語～</div>
+      <div id="storyText"></div>
+      <div id="storyChoices" style="display:none;">
+        <button class="choice-btn" onclick="makeChoice(0)"></button>
+        <button class="choice-btn" onclick="makeChoice(1)"></button>
+      </div>
+      <button id="storyNext" class="story-btn" onclick="nextStory()">次へ</button>
+      <button id="storySkip" class="story-btn" onclick="skipToGame()">ゲーム開始</button>
+    </div>
+  </div>
+
   <div id="gameScreen">
     <!-- 左上：ゴールド・経験値表示 -->
     <div id="goldStatus">
@@ -381,6 +541,7 @@ html, body {
       <button class="menu-btn" onclick="showStatus()">つよさ</button>
       <button class="menu-btn" onclick="showItems()">どうぐ</button>
       <button class="menu-btn" onclick="showMagic()">じゅもん</button>
+      <button class="menu-btn" onclick="showStory()">ものがたり</button>
       <button class="menu-btn" onclick="saveGame()">きろく</button>
     </div>
 
@@ -417,7 +578,7 @@ html, body {
 
     <!-- 下部：メッセージウィンドウ -->
     <div id="messageWindow">
-      <div id="battleLog">フィールドを移動してモンスターを探そう！</div>
+      <div id="battleLog">ものがたりを 読みますか？</div>
     </div>
   </div>
 
@@ -435,8 +596,132 @@ html, body {
 
   <script>
 // ==========================
-// ドラクエ風RPG script.js
+// 光の勇者 - ドラクエ風RPG with Story
 // ==========================
+
+// --------- ストーリーデータ ---------
+const STORY_DATA = {
+  opening: [
+    {
+      text: "遠い昔、アルガリア王国は光の力に守られた平和な国でした。\n\n光の神殿に安置された「聖なる光の石」が、魔物から人々を守っていたのです。",
+      choices: null
+    },
+    {
+      text: "しかし、ある日のこと...\n\n邪悪な魔法使いバルゾスが現れ、光の石を奪い取ってしまいました。\n\n光を失った王国は、瞬く間に魔物たちに侵されてしまったのです。",
+      choices: null
+    },
+    {
+      text: "王様は最後の希望を込めて、勇敢な若者を呼び寄せました。\n\nそれが...あなたです。\n\n「どうか、光の石を取り戻してください。王国の未来は、あなたにかかっているのです」",
+      choices: [
+        "はい、必ず取り戻します！",
+        "私にできるでしょうか..."
+      ]
+    },
+    {
+      text: "王様は微笑みました。\n\n「きっと大丈夫です。あなたには、特別な力を感じます」\n\n「まずは東の村を訪れ、情報を集めてください。そして魔物を倒し、力をつけるのです」",
+      choices: null
+    },
+    {
+      text: "こうして、あなたの冒険が始まりました。\n\n光の石を取り戻し、王国に平和を取り戻すために...\n\n頑張って、光の勇者よ！",
+      choices: null
+    }
+  ],
+  village: [
+    {
+      text: "「おお、勇者様！\n\n東の森に怪しい魔法使いが住み着いたという噂があります。\n\nもしかすると、バルゾスの手下かもしれません」",
+      choices: null
+    }
+  ],
+  castle: [
+    {
+      text: "「勇者よ、ここは古い砦の跡です。\n\n昔、ここには強力な騎士が住んでいましたが、今は魔物の巣窟となっています。\n\n気をつけてください」",
+      choices: null
+    }
+  ],
+  mountain: [
+    {
+      text: "「この山の奥に、バルゾスの城があると言われています。\n\n光の石は、きっとそこに隠されているでしょう。\n\nしかし、とても危険な道のりです...」",
+      choices: null
+    }
+  ]
+};
+
+// --------- ストーリー制御 ---------
+let currentStory = null;
+let storyIndex = 0;
+let storyChoiceCallback = null;
+
+// DOM要素（後で取得）
+let storyScreen, gameScreen, storyText, storyChoices, storyNext, storySkip;
+
+// ストーリー表示
+function showStory(storyKey = 'opening') {
+  currentStory = STORY_DATA[storyKey];
+  if (!currentStory) return;
+  
+  storyIndex = 0;
+  storyScreen.classList.add('active');
+  gameScreen.style.display = 'none';
+  
+  displayCurrentStory();
+}
+
+function displayCurrentStory() {
+  if (!currentStory || storyIndex >= currentStory.length) {
+    endStory();
+    return;
+  }
+  
+  const story = currentStory[storyIndex];
+  storyText.textContent = story.text;
+  
+  if (story.choices) {
+    storyChoices.style.display = 'block';
+    storyNext.style.display = 'none';
+    
+    const choiceButtons = storyChoices.querySelectorAll('.choice-btn');
+    choiceButtons[0].textContent = story.choices[0];
+    choiceButtons[1].textContent = story.choices[1];
+    choiceButtons[0].style.display = 'block';
+    choiceButtons[1].style.display = story.choices[1] ? 'block' : 'none';
+  } else {
+    storyChoices.style.display = 'none';
+    storyNext.style.display = 'block';
+  }
+}
+
+function nextStory() {
+  storyIndex++;
+  displayCurrentStory();
+}
+
+function makeChoice(choiceIndex) {
+  // 選択に応じた反応（簡易）
+  if (storyIndex === 2) { // 王様への返答
+    if (choiceIndex === 0) {
+      setLog("王様「その意気です！」");
+    } else {
+      setLog("王様「大丈夫、きっとできます」");
+    }
+  }
+  
+  storyIndex++;
+  displayCurrentStory();
+}
+
+function endStory() {
+  storyScreen.classList.remove('active');
+  gameScreen.style.display = 'grid';
+  
+  if (currentStory === STORY_DATA.opening) {
+    setLog("冒険の始まりです！");
+  }
+}
+
+function skipToGame() {
+  endStory();
+  setLog("ストーリーをスキップしました");
+}
 
 // --------- 基本定義（タイル・マップ） ---------
 const TILE_SIZE = 64;
@@ -466,26 +751,9 @@ const TILE_COLORS = {
 };
 
 // --------- DOM取得 ---------
-const canvas = document.getElementById("map");
-const ctx = canvas.getContext("2d");
-
-const gameScreen = document.getElementById("gameScreen");
-const fieldArea = document.getElementById("fieldArea");
-const battleArea = document.getElementById("battleArea");
-
-const enemyArea = document.getElementById("enemyArea");
-const enemySprite = document.getElementById("enemySprite");
-const enemyStatus = document.getElementById("enemyStatus");
-const commands = document.getElementById("commands");
-const battleLog = document.getElementById("battleLog");
-
-const goldValue = document.getElementById("goldValue");
-const expValue = document.getElementById("expValue");
-const levelValue = document.getElementById("levelValue");
-const hpValue = document.getElementById("hpValue");
-const maxHpValue = document.getElementById("maxHpValue");
-const mpValue = document.getElementById("mpValue");
-const maxMpValue = document.getElementById("maxMpValue");
+let canvas, ctx, fieldArea, battleArea;
+let enemyArea, enemySprite, enemyStatus, commands, battleLog;
+let goldValue, expValue, levelValue, hpValue, maxHpValue, mpValue, maxMpValue;
 
 // --------- プレイヤー ---------
 const player = {
@@ -495,7 +763,10 @@ const player = {
   atk: 6, def: 2,
   level: 1,
   exp: 0, nextExp: 20,
-  gold: 0
+  gold: 0,
+  visitedVillage: false,
+  visitedCastle: false,
+  visitedMountain: false
 };
 
 // --------- マップ（2列 × 3行 = 6面） ---------
@@ -809,7 +1080,9 @@ let enemy = null;
 const logs = [];
 function setLog(msg) {
   logs.push(msg);
-  battleLog.innerText = msg;
+  if (battleLog) {
+    battleLog.innerText = msg;
+  }
 }
 
 // UI表示/非表示
@@ -985,16 +1258,16 @@ function levelUpCheck() {
 }
 
 function updatePlayerStatus() {
-  goldValue.textContent = player.gold;
-  expValue.textContent = player.exp;
-  levelValue.textContent = player.level;
-  hpValue.textContent = player.hp;
-  maxHpValue.textContent = player.maxHp;
-  mpValue.textContent = player.mp;
-  maxMpValue.textContent = player.maxMp;
+  if (goldValue) goldValue.textContent = player.gold;
+  if (expValue) expValue.textContent = player.exp;
+  if (levelValue) levelValue.textContent = player.level;
+  if (hpValue) hpValue.textContent = player.hp;
+  if (maxHpValue) maxHpValue.textContent = player.maxHp;
+  if (mpValue) mpValue.textContent = player.mp;
+  if (maxMpValue) maxMpValue.textContent = player.maxMp;
 }
 
-// --------- 移動とマップ切替 ---------
+// --------- 移動とマップ切替・イベント処理 ---------
 function movePlayer(dx, dy) {
   if (inBattle) return;
 
@@ -1035,10 +1308,48 @@ function movePlayer(dx, dy) {
   player.y = ny;
   drawMap();
 
-  // エンカウント判定（地形依存）
+  // 地形イベント処理
   const tile = mapData[player.y][player.x];
+  
+  // 村や城に入った時のストーリー
+  if (tile === T.VILLAGE && !player.visitedVillage) {
+    player.visitedVillage = true;
+    setTimeout(() => {
+      showStoryForLocation('village');
+    }, 500);
+    return;
+  }
+  
+  if (tile === T.CASTLE && !player.visitedCastle) {
+    player.visitedCastle = true;
+    setTimeout(() => {
+      showStoryForLocation('castle');
+    }, 500);
+    return;
+  }
+  
+  if (tile === T.MOUNTAIN && !player.visitedMountain) {
+    player.visitedMountain = true;
+    setTimeout(() => {
+      showStoryForLocation('mountain');
+    }, 500);
+    return;
+  }
+
+  // エンカウント判定（地形依存）
   const rate = getEncounterRate(tile);
   if (Math.random() < rate) startBattle(tile);
+}
+
+// 場所別ストーリー表示
+function showStoryForLocation(location) {
+  if (STORY_DATA[location]) {
+    currentStory = STORY_DATA[location];
+    storyIndex = 0;
+    storyScreen.classList.add('active');
+    gameScreen.style.display = 'none';
+    displayCurrentStory();
+  }
 }
 
 // --------- 入力（キーボード・タッチ・補助ボタン） ---------
@@ -1051,49 +1362,8 @@ document.addEventListener("keydown", (e) => {
 
 // スワイプ
 let touchSX = null, touchSY = null;
-canvas.addEventListener("touchstart", (e) => {
-  if (inBattle) return;
-  const t = e.changedTouches[0];
-  touchSX = t.clientX;
-  touchSY = t.clientY;
-}, { passive: true });
 
-canvas.addEventListener("touchend", (e) => {
-  if (inBattle) return;
-  if (touchSX == null || touchSY == null) return;
-  const t = e.changedTouches[0];
-  const dx = t.clientX - touchSX;
-  const dy = t.clientY - touchSY;
-  if (Math.abs(dx) > Math.abs(dy)) {
-    if (dx > 30) movePlayer(1, 0);
-    else if (dx < -30) movePlayer(-1, 0);
-  } else {
-    if (dy > 30) movePlayer(0, 1);
-    else if (dy < -30) movePlayer(0, -1);
-  }
-  touchSX = touchSY = null;
-}, { passive: true });
-
-// 画面上の補助ボタン
-(function attachMobileDpad() {
-  const pad = document.querySelectorAll(".dir-btn");
-  pad.forEach(b => {
-    b.addEventListener("click", () => {
-      const dir = b.dataset.dir;
-      if (dir === "up") movePlayer(0, -1);
-      if (dir === "down") movePlayer(0, 1);
-      if (dir === "left") movePlayer(-1, 0);
-      if (dir === "right") movePlayer(1, 0);
-    });
-  });
-})();
-
-// 戦闘コマンド
-document.getElementById("attackBtn").addEventListener("click", () => playerAttack());
-document.getElementById("magicBtn").addEventListener("click", () => playerMagic());
-document.getElementById("runBtn").addEventListener("click", () => playerRun());
-
-// --------- メニュー機能（ダミー） ---------
+// --------- メニュー機能 ---------
 function showStatus() {
   setLog(`ゆうしゃ LV.${player.level} HP:${player.hp}/${player.maxHp} MP:${player.mp}/${player.maxMp} ATK:${player.atk} DEF:${player.def}`);
 }
@@ -1103,18 +1373,182 @@ function showItems() {
 }
 
 function showMagic() {
-  setLog("ホイミ（回復の呪文）を覚えている。");
+  setLog("ゲンキッズ（回復の呪文）を覚えている。");
 }
 
 function saveGame() {
+  // 簡易セーブ機能
+  const saveData = {
+    player: player,
+    mapRow: mapRow,
+    mapCol: mapCol,
+    visitedVillage: player.visitedVillage,
+    visitedCastle: player.visitedCastle,
+    visitedMountain: player.visitedMountain
+  };
+  
+  // メモリ内保存（リロード時に消える）
+  window.gameData = saveData;
   setLog("ぼうけんの書に きろくしました。");
 }
 
-// --------- 初期描画 ---------
-drawMap();
-showBattleUI(false);
-updatePlayerStatus();
-setLog("アレフガルドの世界へ ようこそ！");
+function loadGame() {
+  if (window.gameData) {
+    const data = window.gameData;
+    Object.assign(player, data.player);
+    mapRow = data.mapRow;
+    mapCol = data.mapCol;
+    mapData = WORLD[mapRow][mapCol];
+    updatePlayerStatus();
+    drawMap();
+    setLog("ぼうけんの書を よみこみました。");
+  }
+}
+
+// 操作説明の表示/非表示
+function showHelp() {
+  const helpOverlay = document.getElementById('helpOverlay');
+  if (helpOverlay) {
+    helpOverlay.style.display = 'flex';
+  }
+}
+
+function closeHelp() {
+  const helpOverlay = document.getElementById('helpOverlay');
+  if (helpOverlay) {
+    helpOverlay.style.display = 'none';
+  }
+  // ヘルプを閉じた後、ゲームを開始
+  if (storyScreen.classList.contains('active')) {
+    // ストーリーをスキップしてゲーム開始
+    skipToGame();
+  }
+}
+
+// --------- 初期化 ---------
+function initGame() {
+  // DOM要素を取得
+  storyScreen = document.getElementById('storyScreen');
+  gameScreen = document.getElementById('gameScreen');
+  storyText = document.getElementById('storyText');
+  storyChoices = document.getElementById('storyChoices');
+  storyNext = document.getElementById('storyNext');
+  storySkip = document.getElementById('storySkip');
+  
+  canvas = document.getElementById("map");
+  ctx = canvas.getContext("2d");
+  fieldArea = document.getElementById("fieldArea");
+  battleArea = document.getElementById("battleArea");
+  
+  enemyArea = document.getElementById("enemyArea");
+  enemySprite = document.getElementById("enemySprite");
+  enemyStatus = document.getElementById("enemyStatus");
+  commands = document.getElementById("commands");
+  battleLog = document.getElementById("battleLog");
+  
+  goldValue = document.getElementById("goldValue");
+  expValue = document.getElementById("expValue");
+  levelValue = document.getElementById("levelValue");
+  hpValue = document.getElementById("hpValue");
+  maxHpValue = document.getElementById("maxHpValue");
+  mpValue = document.getElementById("mpValue");
+  maxMpValue = document.getElementById("maxMpValue");
+
+  // 主人公画像の初期化（エラー処理付き）
+  try {
+    initHeroImages();
+  } catch (error) {
+    console.log('主人公画像初期化をスキップしました');
+  }
+
+  // 音声の初期化（エラー処理付き）
+  try {
+    initAudio();
+  } catch (error) {
+    console.log('音声初期化をスキップしました');
+  }
+
+  // イベントリスナー設定
+  setupEventListeners();
+  
+  // 最初にストーリーを表示
+  showStory('opening');
+  updatePlayerStatus();
+  drawMap();
+  showBattleUI(false);
+}
+
+function setupEventListeners() {
+  // スワイプイベント
+  if (canvas) {
+    canvas.addEventListener("touchstart", (e) => {
+      if (inBattle) return;
+      const t = e.changedTouches[0];
+      touchSX = t.clientX;
+      touchSY = t.clientY;
+    }, { passive: true });
+
+    canvas.addEventListener("touchend", (e) => {
+      if (inBattle) return;
+      if (touchSX == null || touchSY == null) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - touchSX;
+      const dy = t.clientY - touchSY;
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 30) movePlayer(1, 0);
+        else if (dx < -30) movePlayer(-1, 0);
+      } else {
+        if (dy > 30) movePlayer(0, 1);
+        else if (dy < -30) movePlayer(0, -1);
+      }
+      touchSX = touchSY = null;
+    }, { passive: true });
+  }
+
+  // 画面上の補助ボタン
+  const pad = document.querySelectorAll(".dir-btn");
+  pad.forEach(b => {
+    b.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const dir = b.dataset.dir;
+      if (dir === "up") movePlayer(0, -1);
+      if (dir === "down") movePlayer(0, 1);
+      if (dir === "left") movePlayer(-1, 0);
+      if (dir === "right") movePlayer(1, 0);
+    });
+  });
+
+  // 戦闘コマンド（安全なチェック）
+  const attackBtn = document.getElementById("attackBtn");
+  const magicBtn = document.getElementById("magicBtn");
+  const runBtn = document.getElementById("runBtn");
+  const decisionBtn = document.getElementById("decisionButton");
+  
+  if (attackBtn) {
+    attackBtn.addEventListener("click", () => playerAttack());
+  }
+  
+  if (magicBtn) {
+    magicBtn.addEventListener("click", () => playerMagic());
+  }
+  
+  if (runBtn) {
+    runBtn.addEventListener("click", () => playerRun());
+  }
+  
+  // 決定ボタン
+  if (decisionBtn) {
+    decisionBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      handleDecision();
+    });
+  }
+}
+
+// ページ読み込み完了後に初期化
+window.addEventListener('load', () => {
+  initGame();
+});
   </script>
 </body>
 </html>
