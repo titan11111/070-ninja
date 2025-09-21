@@ -307,7 +307,9 @@
                 invulnerable: 0,
                 attackCooldown: 0,
                 wallJump: false,
-                facing: 1 // 1: right, -1: left
+                facing: 1, // 1: right, -1: left
+                maxJumps: 2,
+                jumpsRemaining: 2
             },
             camera: {
                 x: 0
@@ -315,9 +317,16 @@
             enemies: [],
             items: [],
             platforms: [],
+            goal: null,
+            goalReached: false,
             score: 0,
             gameOver: false,
-            keys: {}
+            keys: {
+                left: false,
+                right: false,
+                jump: false,
+                jumpPressed: false
+            }
         };
 
         // プラットフォーム生成
@@ -383,7 +392,20 @@
                     collected: false
                 });
             }
-            
+
+            // ゴール（城）
+            const levelLength = 50 * 40;
+            const goalWidth = 110;
+            const goalHeight = 120;
+            const groundHeight = 40;
+            gameState.goal = {
+                x: levelLength - goalWidth - 40,
+                y: canvas.height - groundHeight - goalHeight,
+                width: goalWidth,
+                height: goalHeight
+            };
+            gameState.goalReached = false;
+
             gameState.platforms = platforms;
             gameState.enemies = enemies;
             gameState.items = items;
@@ -417,17 +439,22 @@
                 player.facing = 1;
             }
             
-            // ジャンプ
-            if (gameState.keys.jump && player.onGround) {
-                player.velY = -player.jumpPower;
-                player.onGround = false;
-            }
-            
-            // 壁キック
-            if (gameState.keys.jump && player.wallJump && !player.onGround) {
-                player.velY = -player.jumpPower;
-                player.velX = player.facing * player.speed * 1.5;
-                player.wallJump = false;
+            // ジャンプ（2段ジャンプ対応）
+            if (gameState.keys.jumpPressed) {
+                if (player.onGround) {
+                    player.velY = -player.jumpPower;
+                    player.onGround = false;
+                    player.jumpsRemaining = player.maxJumps - 1;
+                } else if (player.wallJump && !player.onGround) {
+                    player.velY = -player.jumpPower;
+                    player.velX = player.facing * player.speed * 1.5;
+                    player.wallJump = false;
+                    player.jumpsRemaining = player.maxJumps - 1;
+                } else if (player.jumpsRemaining > 0) {
+                    player.velY = -player.jumpPower;
+                    player.jumpsRemaining--;
+                }
+                gameState.keys.jumpPressed = false;
             }
             
             // 重力
@@ -440,7 +467,7 @@
             // プラットフォーム衝突
             player.onGround = false;
             player.wallJump = false;
-            
+
             for (let platform of gameState.platforms) {
                 if (checkCollision(player, platform)) {
                     // 上からの衝突（着地）
@@ -469,12 +496,25 @@
                     }
                 }
             }
-            
+
+            if (player.onGround) {
+                player.jumpsRemaining = player.maxJumps;
+            }
+
             // 画面外チェック
             if (player.y > canvas.height) {
                 gameState.gameOver = true;
             }
-            
+
+            // ゴール到達チェック
+            if (gameState.goal && checkCollision(player, gameState.goal)) {
+                if (!gameState.goalReached) {
+                    gameState.goalReached = true;
+                    gameState.score += 500;
+                }
+                gameState.gameOver = true;
+            }
+
             // カメラ更新
             gameState.camera.x = player.x - canvas.width / 2;
         }
@@ -562,16 +602,94 @@
             
             // プラットフォーム描画
             for (let platform of gameState.platforms) {
-                ctx.fillStyle = platform.type === 'ground' ? '#4a4a4a' : 
+                ctx.fillStyle = platform.type === 'ground' ? '#4a4a4a' :
                                platform.type === 'wall' ? '#666666' : '#8a6642';
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                
+
                 // 縁取り
                 ctx.strokeStyle = '#333';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
             }
-            
+
+            // ゴールの城描画
+            if (gameState.goal) {
+                const goal = gameState.goal;
+                const crenelHeight = 18;
+
+                // 本体
+                ctx.fillStyle = '#95a5a6';
+                ctx.fillRect(goal.x, goal.y, goal.width, goal.height);
+
+                // 右側の陰影
+                ctx.fillStyle = '#7f8c8d';
+                ctx.fillRect(goal.x + goal.width * 0.65, goal.y, goal.width * 0.35, goal.height);
+
+                // 城壁上部
+                ctx.fillStyle = '#bdc3c7';
+                ctx.fillRect(goal.x, goal.y - 6, goal.width, 6);
+                const crenelWidth = goal.width / 5;
+                for (let i = 0; i < 5; i++) {
+                    ctx.fillRect(goal.x + i * crenelWidth + 4, goal.y - crenelHeight, crenelWidth - 8, crenelHeight);
+                }
+
+                // 装飾ライン
+                ctx.fillStyle = '#d5dbdb';
+                ctx.fillRect(goal.x, goal.y + goal.height * 0.3, goal.width, 6);
+                ctx.fillRect(goal.x, goal.y + goal.height * 0.6, goal.width, 6);
+
+                // ドア
+                const doorWidth = goal.width * 0.28;
+                const doorHeight = goal.height * 0.35;
+                const doorX = goal.x + goal.width / 2 - doorWidth / 2;
+                const doorY = goal.y + goal.height - doorHeight;
+                ctx.fillStyle = '#2c3e50';
+                ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(doorX + 4, doorY + 4, doorWidth - 8, doorHeight - 8);
+                ctx.fillStyle = '#f1c40f';
+                ctx.fillRect(doorX + doorWidth / 2 - 2, doorY + doorHeight / 2, 4, 8);
+
+                // 窓
+                const windowWidth = goal.width * 0.18;
+                const windowHeight = goal.height * 0.2;
+                const leftWindowX = goal.x + goal.width * 0.18;
+                const rightWindowX = goal.x + goal.width * 0.64;
+                const windowY = goal.y + goal.height * 0.25;
+                ctx.fillStyle = '#34495e';
+                ctx.fillRect(leftWindowX, windowY, windowWidth, windowHeight);
+                ctx.fillRect(rightWindowX, windowY, windowWidth, windowHeight);
+                ctx.fillStyle = '#ecf0f1';
+                ctx.fillRect(leftWindowX + 4, windowY + 4, windowWidth - 8, windowHeight - 8);
+                ctx.fillRect(rightWindowX + 4, windowY + 4, windowWidth - 8, windowHeight - 8);
+
+                // 城の旗
+                const flagPoleX = goal.x + goal.width - 12;
+                ctx.fillStyle = '#ecf0f1';
+                ctx.fillRect(flagPoleX, goal.y - 54, 4, 54);
+                ctx.fillStyle = '#e74c3c';
+                ctx.beginPath();
+                ctx.moveTo(flagPoleX + 4, goal.y - 50);
+                ctx.lineTo(flagPoleX + 34, goal.y - 42);
+                ctx.lineTo(flagPoleX + 4, goal.y - 34);
+                ctx.closePath();
+                ctx.fill();
+
+                // ハイライトと枠線
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(goal.x, goal.y, goal.width, goal.height);
+
+                // キラキラエフェクト
+                const sparkleTime = Date.now() * 0.01;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                for (let i = 0; i < 4; i++) {
+                    const sparkleX = goal.x + (Math.sin(sparkleTime * 1.5 + i) + 1) * goal.width * 0.4;
+                    const sparkleY = goal.y + goal.height * 0.2 + Math.cos(sparkleTime * 1.8 + i) * 18;
+                    ctx.fillRect(sparkleX, sparkleY, 2, 2);
+                }
+            }
+
             // アイテム描画（豪華なエフェクト）
             for (let item of gameState.items) {
                 if (!item.collected) {
@@ -792,6 +910,10 @@
         // ゲームオーバー
         function showGameOver() {
             document.getElementById('finalScore').textContent = gameState.score;
+            const titleElement = document.querySelector('#gameOver h2');
+            if (titleElement) {
+                titleElement.textContent = gameState.goalReached ? 'Stage Clear!' : 'Game Over';
+            }
             document.getElementById('gameOver').style.display = 'block';
         }
 
@@ -813,17 +935,26 @@
                     invulnerable: 0,
                     attackCooldown: 0,
                     wallJump: false,
-                    facing: 1
+                    facing: 1,
+                    maxJumps: 2,
+                    jumpsRemaining: 2
                 },
                 camera: { x: 0 },
                 enemies: [],
                 items: [],
                 platforms: [],
+                goal: null,
+                goalReached: false,
                 score: 0,
                 gameOver: false,
-                keys: {}
+                keys: {
+                    left: false,
+                    right: false,
+                    jump: false,
+                    jumpPressed: false
+                }
             };
-            
+
             generateLevel();
             document.getElementById('gameOver').style.display = 'none';
         }
@@ -921,6 +1052,9 @@
             // ジャンプボタン（強化）
             jumpBtn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
+                if (!gameState.keys.jump) {
+                    gameState.keys.jumpPressed = true;
+                }
                 gameState.keys.jump = true;
                 addPressedClass(jumpBtn);
             });
@@ -935,6 +1069,9 @@
             });
             jumpBtn.addEventListener('mousedown', (e) => {
                 e.preventDefault();
+                if (!gameState.keys.jump) {
+                    gameState.keys.jumpPressed = true;
+                }
                 gameState.keys.jump = true;
                 addPressedClass(jumpBtn);
             });
@@ -967,6 +1104,9 @@
                         gameState.keys.right = true;
                         break;
                     case 'Space':
+                        if (!gameState.keys.jump) {
+                            gameState.keys.jumpPressed = true;
+                        }
                         gameState.keys.jump = true;
                         e.preventDefault();
                         break;
