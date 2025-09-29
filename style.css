@@ -1,129 +1,237 @@
-/* ==========================
-   ファミコン風RPG CSS
-   ========================== */
-
-/* ドットフォント（雰囲気） */
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-/* 全体 */
-:root {
-  --win-bg: #111;
-  --win-border: #fff;
-  --fg: #fff;
-  --accent: #ff0;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
-* { box-sizing: border-box; }
-
-html, body {
-  margin: 0;
-  padding: 0;
-  background: #000;
-  color: var(--fg);
-  font-family: "Press Start 2P", monospace, system-ui, sans-serif;
-  line-height: 1.35;
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-h1 {
-  font-size: 18px;
-  color: var(--accent);
-  text-align: center;
-  margin: 12px 8px 8px;
-  text-shadow: 2px 2px 0 #333;
+.game-container {
+    width: 100%;
+    max-width: 800px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
-/* フィールド */
-#gameContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.ui-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    margin: 10px;
+    z-index: 100;
 }
 
-#map {
-  width: 92vw;         /* スマホ拡大縮小 */
-  max-width: 320px;    /* 原寸上限 */
-  height: auto;        /* 比率維持 */
-  border: 4px solid var(--win-border);
-  background: #000;
-  image-rendering: pixelated;
+.hp-display {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
 }
 
-/* ウィンドウ共通 */
-.window {
-  background: var(--win-bg);
-  border: 2px solid var(--win-border);
-  color: var(--fg);
-  padding: 8px;
+.heart {
+    color: #ff3366;
+    margin-left: 5px;
+    font-size: 20px;
 }
 
-/* 戦闘UIレイアウト */
-#battleUI {
-  margin: 12px auto 8px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 92vw;
-  max-width: 340px;
+.stage-display {
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffd700;
 }
 
-#enemyContainer { width: 100%; text-align: center; }
-#line { height: 1px; background: var(--win-border); opacity: .5; }
-
-#line + .line { margin-top: 6px; }
-
-.line { font-size: 12px; }
-.sprite { width: 64px; height: 64px; margin: 6px auto; }
-
-#playerStatus {
-  width: 100%;
-  font-size: 12px;
-  text-align: left;
+.score-display {
+    font-size: 18px;
+    font-weight: bold;
 }
 
-/* コマンド＋ログ */
-#battleRow {
-  display: flex;
-  gap: 8px;
-  width: 100%;
+#gameCanvas {
+    flex: 1;
+    background: linear-gradient(180deg, #0f3460 0%, #533483 100%);
+    border: 2px solid #333;
+    border-radius: 10px;
+    margin: 0 10px;
 }
 
-.commands { flex: 1; display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
-.cmd-btn {
-  width: 100%;
-  min-height: 44px;
-  border: 2px solid var(--win-border);
-  border-radius: 10px;
-  background: linear-gradient(180deg, #444, #222);
-  color: var(--fg);
-  font-size: 14px;
-  padding: 10px 8px;
-  cursor: pointer;
-  box-shadow: 0 4px #000;
-  transition: transform .06s ease, filter .2s ease;
+.controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.9);
+    margin: 10px;
+    border-radius: 15px;
 }
-.cmd-btn:active { transform: translateY(2px); box-shadow: 0 2px #000; filter: brightness(1.1); }
 
-.log { flex: 1.4; min-height: 80px; font-size: 12px; text-align: left; }
-
-/* モバイル補助キー */
-#mobileControls {
-  display: none;
-  margin: 8px auto 16px;
-  width: 92vw;
-  max-width: 340px;
+.controls-left {
+    display: flex;
+    gap: 10px;
 }
-.control-row { display: flex; justify-content: center; gap: 8px; margin: 4px 0; }
-.dir-btn {
-  width: 64px; height: 64px;
-  border: 2px solid var(--win-border);
-  border-radius: 10px;
-  background: #222; color: var(--fg);
-  font-size: 20px;
-}
-.dir-btn:active { filter: brightness(1.25); }
 
-/* レスポンシブ */
-@media (max-width: 600px) {
-  #battleRow { flex-direction: column; }
-  .cmd-btn { font-size: 18px;
+.controls-right {
+    display: flex;
+    gap: 10px;
+}
+
+.control-btn {
+    width: 70px;
+    height: 70px;
+    border: none;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.move-btn {
+    background: linear-gradient(145deg, #4a90e2, #357abd);
+    color: white;
+    border: 3px solid #2c5a8a;
+}
+
+.action-btn {
+    background: linear-gradient(145deg, #ff6b6b, #cc5555);
+    color: white;
+    border: 3px solid #994444;
+}
+
+.control-btn:active {
+    transform: scale(0.9);
+    box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.4);
+}
+
+.control-btn.pressed {
+    transform: scale(0.95);
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.game-over, .stage-clear {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    z-index: 200;
+    display: none;
+}
+
+.game-over h2 {
+    color: #ff3366;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.stage-clear h2 {
+    color: #4a90e2;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.restart-btn, .next-btn {
+    background: linear-gradient(145deg, #4a90e2, #357abd);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 15px;
+}
+
+.restart-btn:hover, .next-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* タッチデバイス対応 */
+@media (hover: none) {
+    .control-btn:active {
+        transform: scale(0.9);
+    }
+}
+
+/* PC用の隠しコントロール */
+@media (min-width: 768px) {
+    .controls {
+        opacity: 0.3;
+        transition: opacity 0.3s ease;
+    }
+    .controls:hover {
+        opacity: 1;
+    }
+}
+
+/* スマホ用調整 */
+@media (max-width: 767px) {
+    .game-container {
+        height: 100vh;
+    }
+    
+    .ui-top {
+        font-size: 14px;
+        padding: 8px 15px;
+        margin: 5px;
+    }
+    
+    .stage-display {
+        font-size: 16px;
+    }
+    
+    #gameCanvas {
+        margin: 0 5px;
+    }
+    
+    .controls {
+        padding: 10px;
+        margin: 5px;
+    }
+    
+    .control-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 16px;
+    }
+}
+
+/* 極小画面用 */
+@media (max-width: 480px) {
+    .control-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 14px;
+    }
+    
+    .ui-top {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    .stage-display {
+        font-size: 14px;
+    }
+}
